@@ -1,16 +1,39 @@
-# React + Vite
+# PSG Asset Management - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for PSG Asset Management, built using React and TypeScript. It provides a user-friendly interface for managing assets, viewing reports, and performing various operations related to asset management.
 
-Currently, two official plugins are available:
+Features:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- User authentication and authorization
+- Dashboard for asset overview
+- Asset management (add, edit, delete assets)
+- Reporting and analytics
+- Responsive design for mobile and desktop devices
+- Integration with backend APIs for data retrieval and manipulation
+- State management using Context API.
 
-## React Compiler
+Technologies Used:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React + Vite
+- JavaScript
+- Tailwind CSS
 
-## Expanding the ESLint configuration
+Development Setup:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Clone the repository:
+   ```bash
+   git clone
+   ```
+2. Navigate to the project directory:
+   ```bash
+   cd psg-asset-management-frontend
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
