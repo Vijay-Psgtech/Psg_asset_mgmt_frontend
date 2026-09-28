@@ -2,13 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import client, { setAccessToken } from '../api/client.js';
 
 const AuthContext = createContext(null);
-const SESSION_HINT_KEY = 'assetrak_had_session';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  // If we've never had a session in this browser, skip straight to "logged out"
-  // instead of firing a refresh request that we already know will 401.
-  const [loading, setLoading] = useState(() => localStorage.getItem(SESSION_HINT_KEY) === '1');
+  const [loading, setLoading] = useState(true);
   // Prevents a duplicate /auth/refresh call from React 18 StrictMode's
   // intentional double-invoke of effects in development.
   const bootstrapped = useRef(false);
@@ -18,12 +15,11 @@ export function AuthProvider({ children }) {
       const { data } = await client.post('/auth/refresh');
       setAccessToken(data.accessToken);
       setUser(data.user);
-      localStorage.setItem(SESSION_HINT_KEY, '1');
     } catch {
       // No valid session (first visit, or the refresh cookie expired) -
       // this is an expected, silent path, not an error condition to surface.
+      setAccessToken(null);
       setUser(null);
-      localStorage.removeItem(SESSION_HINT_KEY);
     } finally {
       setLoading(false);
     }
@@ -33,17 +29,11 @@ export function AuthProvider({ children }) {
     if (bootstrapped.current) return;
     bootstrapped.current = true;
 
-    // Only ping /auth/refresh if this browser has logged in before -
-    // otherwise there's no cookie to check and we'd just get a guaranteed 401.
-    if (localStorage.getItem(SESSION_HINT_KEY) === '1') {
-      bootstrap();
-    } else {
-      setLoading(false);
-    }
+    bootstrap();
 
     const onExpired = () => {
+      setAccessToken(null);
       setUser(null);
-      localStorage.removeItem(SESSION_HINT_KEY);    
     };
     window.addEventListener('auth:expired', onExpired);
     return () => window.removeEventListener('auth:expired', onExpired);
@@ -53,7 +43,6 @@ export function AuthProvider({ children }) {
     const { data } = await client.post('/auth/login', { email: email.trim(), password, institution });
     setAccessToken(data.accessToken);
     setUser(data.user);
-    localStorage.setItem(SESSION_HINT_KEY, '1');
     return data.user;
   }, []);
 
@@ -63,7 +52,6 @@ export function AuthProvider({ children }) {
     } finally {
       setAccessToken(null);
       setUser(null);
-      localStorage.removeItem(SESSION_HINT_KEY);
     }
   }, []);
 
