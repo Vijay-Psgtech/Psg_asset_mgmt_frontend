@@ -49,8 +49,8 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('auth:expired', onExpired);
   }, [bootstrap]);
 
-  const login = useCallback(async (email, password) => {
-    const { data } = await client.post('/auth/login', { email: email.trim(), password });
+  const login = useCallback(async (email, password, institution) => {
+    const { data } = await client.post('/auth/login', { email: email.trim(), password, institution });
     setAccessToken(data.accessToken);
     setUser(data.user);
     localStorage.setItem(SESSION_HINT_KEY, '1');

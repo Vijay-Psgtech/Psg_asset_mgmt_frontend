@@ -1,25 +1,50 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBanner } from '../components/Common.jsx';
 import BrandMark from '../components/BrandMark.jsx';
+import client from '../api/client.js';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [institutions, setInstitutions] = useState([]);
+  const [institution, setInstitution] = useState('');
+  const [institutionsLoading, setInstitutionsLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    let active = true;
+
+    client.get('/institutions')
+      .then(({ data }) => {
+        const rows = Array.isArray(data) ? data : data.institutions;
+        if (!active) return;
+        setInstitutions(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {
+        if (active) setError('Could not load institutions. Please refresh and try again.');
+      })
+      .finally(() => {
+        if (active) setInstitutionsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(email, password, institution);
       navigate(location.state?.from || '/', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Check your credentials.');
@@ -74,8 +99,31 @@ export default function Login() {
             <ErrorBanner message={error} />
 
             <div className="field-group">
-              <label className="label">Work email</label>
+              <label className="label" htmlFor="institution">Institution</label>
+              <select
+                id="institution"
+                className="input"
+                value={institution}
+                onChange={(e) => setInstitution(e.target.value)}
+                required
+                disabled={institutionsLoading}
+              >
+                <option value="all">All institutions</option>
+                <option value="">
+                  {institutionsLoading ? 'Loading institutions…' : 'Select your institution'}
+                </option>
+                {institutions.map((item) => {
+                  const value = item._id || item.id || item.name;
+                  const label = item.name || item.institutionName || item.institution;
+                  return value && label ? <option key={value} value={value}>{label}</option> : null;
+                })}
+              </select>
+            </div>
+
+            <div className="field-group">
+              <label className="label" htmlFor="email">Work email</label>
               <input
+                id="email"
                 className="input"
                 type="email"
                 value={email}
@@ -88,9 +136,10 @@ export default function Login() {
             </div>
 
             <div className="field-group">
-              <label className="label">Password</label>
+              <label className="label" htmlFor="password">Password</label>
               <div className="password-wrap">
                 <input
+                  id="password"
                   className="input"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
