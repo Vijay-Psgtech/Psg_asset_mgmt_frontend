@@ -50,7 +50,6 @@ client.interceptors.response.use(
         return client(original);
       } catch (refreshError) {
         setAccessToken(null);
-        localStorage.removeItem('assetrak_had_session');
         window.dispatchEvent(new CustomEvent('auth:expired'));
         return Promise.reject(refreshError);
       }
