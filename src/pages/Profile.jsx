@@ -13,12 +13,16 @@ export default function Profile() {
   const name = splitName(user?.name);
   const [form, setForm] = useState({ firstName: name.firstName, lastName: name.lastName, email: user?.email || '', currentPassword: '', newPassword: '' });
   const [extras, setExtras] = useState({ location: user?.location || '', phone: user?.phone || '', website: user?.website || '' });
+  const [institutionName, setInstitutionName] = useState('');
+  const [institutionLoading, setInstitutionLoading] = useState(false);
   const [avatar, setAvatar] = useState(user?.avatar || '');
   const [darkMode, setDarkMode] = useState(() => user?.preferences?.theme === 'midnight' || localStorage.getItem('assetrak_theme') === 'midnight');
   const [soundEffects, setSoundEffects] = useState(() => user?.preferences?.soundEffects ?? true);
   const [confetti, setConfetti] = useState(() => user?.preferences?.confetti ?? true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const institutionId = user?.institution?.id || user?.institution?._id || user?.institution || '';
+  const initialInstitutionName = typeof user?.institution === 'object' ? user.institution?.name : '';
 
   useEffect(() => {
     const nextName = splitName(user?.name);
@@ -29,6 +33,35 @@ export default function Profile() {
     setSoundEffects(user?.preferences?.soundEffects ?? true);
     setConfetti(user?.preferences?.confetti ?? true);
   }, [user?.name, user?.email, user?.location, user?.phone, user?.website, user?.avatar, user?.preferences?.theme, user?.preferences?.soundEffects, user?.preferences?.confetti]);
+
+  useEffect(() => {
+    if (initialInstitutionName) {
+      setInstitutionName(initialInstitutionName);
+      setInstitutionLoading(false);
+      return undefined;
+    }
+    if (!institutionId) {
+      setInstitutionName('');
+      setInstitutionLoading(false);
+      return undefined;
+    }
+
+    let active = true;
+    setInstitutionLoading(true);
+    client.get('/institutions')
+      .then(({ data }) => {
+        const rows = Array.isArray(data) ? data : data.institutions;
+        const institution = Array.isArray(rows) ? rows.find((item) => (item._id || item.id) === institutionId) : null;
+        if (active) setInstitutionName(institution?.name || 'Institution unavailable');
+      })
+      .catch(() => {
+        if (active) setInstitutionName('Institution unavailable');
+      })
+      .finally(() => {
+        if (active) setInstitutionLoading(false);
+      });
+    return () => { active = false; };
+  }, [institutionId, initialInstitutionName]);
 
   const update = (key, value) => setForm((previous) => ({ ...previous, [key]: value }));
   const updateExtra = (key, value) => setExtras((previous) => ({ ...previous, [key]: value }));
@@ -86,7 +119,8 @@ export default function Profile() {
             <div className="grid gap-5 sm:grid-cols-2">
               <label className="label">First Name<input className="input mt-2" value={form.firstName} onChange={(e) => update('firstName', e.target.value)} required /></label>
               <label className="label">Last Name<input className="input mt-2" value={form.lastName} onChange={(e) => update('lastName', e.target.value)} /></label>
-              <label className="label sm:col-span-2">Email<input type="email" className="input mt-2" value={form.email} onChange={(e) => update('email', e.target.value)} required /></label>
+              <label className="label sm:col-span-2">Email<input type="email" className="input mt-2 cursor-not-allowed" value={form.email} readOnly /></label>
+              <label className="label sm:col-span-2">Institution<input className="input mt-2 cursor-not-allowed" value={institutionLoading ? 'Loading institution...' : institutionName || 'No institution assigned'} readOnly /></label>
               <label className="label">Location<input className="input mt-2" placeholder="Select a location" value={extras.location || ''} onChange={(e) => updateExtra('location', e.target.value)} /></label>
               <label className="label">Phone<input className="input mt-2" placeholder="+1 555 000 0000" value={extras.phone || ''} onChange={(e) => updateExtra('phone', e.target.value)} /></label>
               <label className="label sm:col-span-2">Website<input type="url" className="input mt-2" placeholder="https://example.com" value={extras.website || ''} onChange={(e) => updateExtra('website', e.target.value)} /></label>
