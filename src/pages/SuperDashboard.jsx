@@ -7,11 +7,15 @@ const emptyForm = {
   email: '',
   password: '',
   role: 'asset_user',
+  institution: '',
   menuAccess: DEFAULT_ROLE_ACCESS.asset_user,
 };
 
 export default function SuperDashboard() {
   const [users, setUsers] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
+  const [institutionsLoading, setInstitutionsLoading] = useState(true);
+  const [institutionError, setInstitutionError] = useState('');
   const [summary, setSummary] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState(null);  
@@ -40,6 +44,22 @@ export default function SuperDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    let active = true;
+    api.get('/institutions')
+      .then(({ data }) => {
+        const rows = Array.isArray(data) ? data : data.institutions;
+        if (active) setInstitutions(Array.isArray(rows) ? rows : []);
+      })
+      .catch((err) => {
+        if (active) setInstitutionError(err.response?.data?.message || 'Could not load institutions.');
+      })
+      .finally(() => {
+        if (active) setInstitutionsLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
   const openCreate = () => { setEditing(null); setForm({ ...emptyForm, menuAccess: DEFAULT_ROLE_ACCESS.asset_user }); setShowForm(true); setMessage(''); };
   const openEdit = (user) => {
     setEditing(user);
@@ -48,6 +68,7 @@ export default function SuperDashboard() {
       email: user.email,
       password: '',
       role: user.role,
+      institution: user.institution?.id || user.institution?._id || user.institution || '',
       menuAccess: Array.isArray(user.menuAccess) && user.menuAccess.length ? [...user.menuAccess] : [...(DEFAULT_ROLE_ACCESS[user.role] || [])],
     });
     setShowForm(true);
@@ -98,6 +119,10 @@ export default function SuperDashboard() {
           const nextRole = event.target.value;
           setForm({ ...form, role: nextRole, menuAccess: nextRole === 'superadmin' ? [...DEFAULT_ROLE_ACCESS.superadmin] : nextRole === 'admin' ? [...DEFAULT_ROLE_ACCESS.admin] : [...DEFAULT_ROLE_ACCESS.asset_user] });
         }}><option value="asset_user">Asset user</option><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select></label></div>
+        <label className="label mt-4 block">Institution<select className="input mt-2" value={form.institution || ''} onChange={(event) => setForm({ ...form, institution: event.target.value })} disabled={institutionsLoading}><option value="">{institutionsLoading ? 'Loading institutions...' : 'No institution'}</option>{institutions.map((institution) => {
+          const value = institution._id || institution.id;
+          return value ? <option key={value} value={value}>{institution.name || institution.institutionName || institution.institution}</option> : null;
+        })}</select>{institutionError && <span className="mt-1 block text-xs text-red-600">{institutionError}</span>}</label>
         <div className="mt-6">
           <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted">Menu access</div>
           <div className="grid max-h-56 grid-cols-1 gap-2 overflow-y-auto rounded border border-line bg-[#f6f8fb] p-3 sm:grid-cols-2">
