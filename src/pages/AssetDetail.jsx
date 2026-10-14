@@ -135,6 +135,7 @@ export default function AssetDetail() {
             <dl className="grid grid-cols-1 gap-x-4 gap-y-4 text-sm sm:grid-cols-2">
               <div><dt className="text-muted text-xs mb-0.5">Category</dt><dd className="text-zinc-100">{asset.category}</dd></div>
               <div><dt className="text-muted text-xs mb-0.5">Location</dt><dd className="text-zinc-100">{asset.location || '—'}</dd></div>
+              <div><dt className="text-muted text-xs mb-0.5">Institution</dt><dd className="text-zinc-100">{asset.institution?.name || '—'}</dd></div>
               <div><dt className="text-muted text-xs mb-0.5">Brand / Model</dt><dd className="text-zinc-100">{[asset.brand, asset.model].filter(Boolean).join(' / ') || '—'}</dd></div>
               <div><dt className="text-muted text-xs mb-0.5">Serial Number</dt><dd className="text-zinc-100 font-mono text-xs">{asset.serialNumber || '—'}</dd></div>
               <div><dt className="text-muted text-xs mb-0.5">Vendor</dt><dd className="text-zinc-100">{asset.vendor || '—'}</dd></div>
