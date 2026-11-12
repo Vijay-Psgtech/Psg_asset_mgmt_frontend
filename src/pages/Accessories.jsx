@@ -113,6 +113,7 @@ export default function Accessories() {
                   <tr className="border-b border-[#e5edf3] bg-[#f5f7fa] text-[10px] uppercase tracking-[0.18em] text-[#5a6978]">
                     <th className="px-4 py-3 font-semibold">Name</th>
                     <th className="px-4 py-3 font-semibold">Manufacturer</th>
+                    <th className="px-4 py-3 font-semibold">Institution</th>
                     <th className="px-4 py-3 font-semibold">Stock</th>
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 text-right font-semibold">Actions</th>
@@ -139,6 +140,7 @@ export default function Accessories() {
                           <div className="text-xs text-[#738299]">{row.category || '—'}</div>
                         </td>
                         <td className="px-4 py-3 text-[#586a7c]">{row.manufacturer || '—'}</td>
+                        <td className="px-4 py-3 text-[#586a7c]">{row.institution?.name || row.institution?.code || '—'}</td>
                         <td className="px-4 py-3 text-[#586a7c]">
                           {row.qtyAvailable}/{row.totalQty} available
                         </td>

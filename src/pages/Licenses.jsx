@@ -111,6 +111,7 @@ export default function Licenses() {
             <tr className="border-b border-white/10 bg-white/5 text-[10px] uppercase tracking-widest text-muted stencil">
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Vendor</th>
+              <th className="px-4 py-3">Institution</th>
               <th className="px-4 py-3">Seats</th>
               <th className="px-4 py-3">Expires</th>
               <th className="px-4 py-3">Status</th>
@@ -138,6 +139,7 @@ export default function Licenses() {
                     <div className="text-xs text-muted">{row.category || '—'}</div>
                   </td>
                   <td className="px-4 py-3 text-muted">{row.vendor || '—'}</td>
+                  <td className="px-4 py-3 text-muted">{row.institution?.name || row.institution?.code || '—'}</td>
                   <td className="px-4 py-3">
                     <div className="mb-1 text-xs text-muted">
                       {row.seatsUsed}/{row.seats} used

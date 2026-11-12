@@ -6,6 +6,7 @@ import ProfileAvatar from '../components/ProfileAvatar.jsx';
 const TABS = [['info', 'Info'], ['assets', 'Assets'], ['licenses', 'Licenses'], ['accessories', 'Accessories'], ['consumables', 'Consumables'], ['eulas', 'EULAs']];
 const EXTRA_TABS = ['requestable', 'requested'];
 
+
 function formatDate(value) { return value ? new Date(value).toLocaleDateString() : 'Not set'; }
 function EmptyState({ label, detail }) { return <div className="px-5 py-12 text-center"><div className="text-sm font-medium text-ink">No {label.toLowerCase()} found</div><p className="mt-1 text-xs text-muted">{detail}</p></div>; }
 
@@ -18,7 +19,7 @@ function InventoryTable({ items, type }) {
   if (!items.length) return <EmptyState label={type} detail={`Assigned ${type.toLowerCase()} will appear here.`} />;
   return <div className="overflow-x-auto"><table className="user-table w-full min-w-[600px] text-left"><thead><tr><th>Name</th><th>Category / vendor</th><th>Assigned</th><th>Status</th></tr></thead><tbody>{items.map((item, index) => <tr key={`${item._id}-${index}`}><td className="font-medium text-ink">{item.name}</td><td className="text-muted">{item.category || item.vendor || '—'}</td><td className="text-muted">{item.quantity ? `${item.quantity} item${item.quantity === 1 ? '' : 's'}` : formatDate(item.assignedDate || item.checkoutDate || item.issuedDate)}</td><td><span className="user-status user-status-ready">Assigned</span></td></tr>)}</tbody></table></div>;
 }
-
+  
 function EulaTable({ items }) {
   if (!items.length) return <EmptyState label="EULAs" detail="EULA records linked to your assigned software will appear here." />;
   return <div className="overflow-x-auto"><table className="user-table w-full min-w-[680px] text-left"><thead><tr><th>Agreement</th><th>Vendor / License</th><th>Asset</th><th>Status</th><th>Expires</th></tr></thead><tbody>{items.map((item) => <tr key={item._id}><td className="font-medium text-ink">{item.title}</td><td className="text-muted">{item.vendor || item.license?.name || '—'}</td><td className="text-muted">{item.asset?.assetTag || item.asset?.name || '—'}</td><td><span className="user-status user-status-ready">{item.status || 'pending'}</span></td><td className="text-muted">{formatDate(item.expiresAt)}</td></tr>)}</tbody></table></div>;
@@ -55,7 +56,7 @@ export default function UserDashboard() {
     catch (err) { setError(err.response?.data?.message || 'Could not submit the asset request.'); }
   };
 
-  return <div className="user-portal space-y-5">
+  return <div className="user-portal space-y-5">  
     <div className="user-breadcrumb"><Link to="/my-assets">Home</Link><span>›</span><span>View profile</span><span>›</span><strong>{currentTitle}</strong></div>
     <div className="user-notice">Asset user portal <span>Use the tabs below to view your assigned equipment, software, and requestable inventory.</span></div>
     <section className="user-profile-card"><div className="user-profile-top"><ProfileAvatar user={user} size="md" /> <div><h1>{user?.name || 'Asset user'}</h1><p>{user?.email || 'No email'} <span>•</span> {user?.role || 'Asset user'}</p><small>Member since {formatDate(user?.createdAt)}</small></div><Link to="/profile" className="user-edit-profile">Edit profile</Link></div><nav className="user-tabs">{[...TABS, ['requestable', 'Requestable'], ['requested', 'Requested']].map(([key, label]) => <button type="button" key={key} onClick={() => setView(key)} className={tab === key ? 'active' : ''}>{label}{key === 'assets' && <b>{summary.assets || 0}</b>}{key === 'licenses' && <b>{summary.licenses || 0}</b>}{key === 'requested' && data?.requested?.length > 0 && <b>{data.requested.length}</b>}</button>)}</nav></section>
@@ -63,3 +64,4 @@ export default function UserDashboard() {
     <section className="user-shortcuts"><Link to="/requestable-items"><span>＋</span><strong>Request an asset</strong><small>Browse available equipment</small></Link><Link to="/maintenance"><span>⚒</span><strong>Report an issue</strong><small>Get help with assigned equipment</small></Link><Link to="/documents"><span>▤</span><strong>View documents</strong><small>Manuals and certificates</small></Link></section>
   </div>;
 }
+  

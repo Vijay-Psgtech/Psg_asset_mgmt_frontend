@@ -122,8 +122,8 @@ export default function ResourcePage({ kind }) {
   };
 
   const tableColumns = useMemo(() => {
-    if (kind === 'components') return ['Name', 'Category', 'Manufacturer', 'Model', 'Serial', 'Qty', 'Status'];
-    return ['Name', 'Category', 'Description', 'Status'];
+    if (kind === 'components') return ['Name', 'Category', 'Manufacturer', 'Model', 'Serial', 'Institution', 'Qty', 'Status'];
+    return ['Name', 'Category', 'Description', 'Institution', 'Status'];
   }, [kind]);
 
   return (
@@ -238,6 +238,7 @@ export default function ResourcePage({ kind }) {
                         <td>{item.manufacturer || '—'}</td>
                         <td>{item.modelNumber || '—'}</td>
                         <td>{item.serialNumber || '—'}</td>
+                        <td>{item.institution?.name || item.institution?.code || '—'}</td>
                         <td>{item.quantity ?? 0}</td>
                         <td>{item.status || 'available'}</td>
                       </>
@@ -245,6 +246,7 @@ export default function ResourcePage({ kind }) {
                       <>
                         <td>{item.category || '—'}</td>
                         <td>{item.description || '—'}</td>
+                        <td>{item.institution?.name || item.institution?.code || '—'}</td>
                         <td>{item.active ? 'Active' : 'Inactive'}</td>
                       </>
                     )}

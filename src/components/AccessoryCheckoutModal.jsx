@@ -15,24 +15,27 @@ export default function AccessoryCheckoutModal({ accessory, onClose, onChanged }
 
   const handleCheckout = async (e) => {
     e.preventDefault();
-    if (!name) {
+    if (!name.trim()) {
       setError('Enter a name to check this out to.');
+      return;
+    }
+    if (!Number.isInteger(Number(quantity)) || Number(quantity) < 1 || Number(quantity) > available) {
+      setError(`Enter a whole number between 1 and ${available}.`);
       return;
     }
     setError('');
     setLoading(true);
-    try {       
+    try {
       await api.post(`/accessories/${accessory._id}/checkout`, {
-        name,
-        email,
-        department,
-        quantity: Number(quantity) || 1,
+        name: name.trim(),
+        email: email.trim(),
+        department: department.trim(),
+        quantity: Number(quantity),
       });
-      setName('');  
+      setName('');
       setEmail('');
       setDepartment('');
 
-      
       setQuantity(1);
       onChanged();
     } catch (err) {
@@ -43,6 +46,7 @@ export default function AccessoryCheckoutModal({ accessory, onClose, onChanged }
   };
 
   const handleCheckin = async (checkoutId) => {
+    setError('');
     setLoading(true);
     try {
       await api.patch(`/accessories/${accessory._id}/checkouts/${checkoutId}/checkin`);
@@ -56,15 +60,20 @@ export default function AccessoryCheckoutModal({ accessory, onClose, onChanged }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto border border-white/10 bg-ink shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="accessory-checkouts-title"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto border border-white/10 bg-ink shadow-2xl"
+      >
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
-            <h2 className="stencil text-sm font-semibold uppercase tracking-widest text-white">
+            <h2 id="accessory-checkouts-title" className="stencil text-sm font-semibold uppercase tracking-widest text-white">
               {accessory.name} — Checkouts
             </h2>
             <p className="text-[10px] uppercase tracking-widest text-muted">{available} available of {accessory.totalQty}</p>
           </div>
-          <button onClick={onClose} className="text-muted hover:text-white text-xs uppercase tracking-widest">
+          <button disabled={loading} onClick={onClose} className="text-muted hover:text-white text-xs uppercase tracking-widest disabled:opacity-50">
             Close
           </button>
         </div>
@@ -103,14 +112,14 @@ export default function AccessoryCheckoutModal({ accessory, onClose, onChanged }
                   </div>
                 ))}
               </>
-            )}
+            )}  
           </div>
 
           {available > 0 ? (
             <form onSubmit={handleCheckout} className="space-y-3 border-t border-white/10 pt-4">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted stencil">Check out</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="input" />
+                <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="input" />
                 <input
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
@@ -119,7 +128,7 @@ export default function AccessoryCheckoutModal({ accessory, onClose, onChanged }
                 />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email (optional)" className="input" />
+                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Email (optional)" className="input" />
                 <input
                   type="number"
                   min="1"
@@ -129,10 +138,10 @@ export default function AccessoryCheckoutModal({ accessory, onClose, onChanged }
                   className="input"
                 />
               </div>
-              {error && <p className="text-xs text-red-400">{error}</p>}
+              {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
               <div className="flex justify-end">
                 <button
-                  type="submit"
+                  type="submit"   
                   disabled={loading}
                   className="border border-amber-500/50 bg-amber-500/10 px-4 py-2 text-xs uppercase tracking-widest text-amber-400 hover:bg-amber-500/20 disabled:opacity-50"
                 >

@@ -5,12 +5,12 @@ import AssignmentModal from '../components/AssignmentModal.jsx';
 
 const TABS = [
   { key: 'all', label: 'All' },
-  { key: 'assigned', label: 'Active' },
+  { key: 'assigned', label: 'Active' }, 
   { key: 'overdue', label: 'Overdue' },
   { key: 'returned', label: 'Returned' },
 ];
 
-export default function Assignments() {
+export default function Assignments() {  
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
   const [rows, setRows] = useState([]);

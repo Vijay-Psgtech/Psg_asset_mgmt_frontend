@@ -92,6 +92,7 @@ export default function Consumables() {
             <tr className="border-b border-white/10 bg-white/5 text-[10px] uppercase tracking-widest text-muted stencil">
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Manufacturer</th>
+              <th className="px-4 py-3">Institution</th>
               <th className="px-4 py-3">Stock</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Action</th>
@@ -118,6 +119,7 @@ export default function Consumables() {
                     <div className="text-xs text-muted">{row.category || '—'}</div>
                   </td>
                   <td className="px-4 py-3 text-muted">{row.manufacturer || '—'}</td>
+                  <td className="px-4 py-3 text-muted">{row.institution?.name || row.institution?.code || '—'}</td>
                   <td className="px-4 py-3 text-muted">
                     {row.qtyRemaining}/{row.totalQty} remaining
                   </td>

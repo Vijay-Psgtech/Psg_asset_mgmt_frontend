@@ -107,15 +107,15 @@ export default function Assets() {
         />
       ) : (
         <div className="card overflow-x-auto">
-          <table className="min-w-[960px] w-full text-sm">
+          <table className="min-w-[820px] w-full text-sm">
             <thead>
               <tr className="border-b border-line text-[11px] font-mono uppercase tracking-wider text-muted">
                 <th className="text-left px-4 py-3">Tag</th>
                 <th className="text-left px-4 py-3">Name</th>
                 <th className="text-left px-4 py-3">Category</th>
+                <th className="text-left px-4 py-3">Institution</th>
                 <th className="text-left px-4 py-3">Status</th>
                 <th className="text-left px-4 py-3">Location</th>
-                <th className="text-left px-4 py-3">Institution</th>
                 <th className="text-left px-4 py-3">Serial</th>
                 <th className="text-right px-4 py-3">Actions</th>
               </tr>
@@ -130,9 +130,9 @@ export default function Assets() {
                   </td>
                   <td className="px-4 py-3 text-zinc-100">{a.name}</td>
                   <td className="px-4 py-3 text-muted">{a.category}</td>
+                  <td className="px-4 py-3 text-muted">{a.institution?.name || a.institution?.code || '—'}</td>
                   <td className="px-4 py-3"><StatusChip status={a.status} /></td>
                   <td className="px-4 py-3 text-muted">{a.location || '—'}</td>
-                  <td className="px-4 py-3 text-muted">{a.institution?.name || '—'}</td>
                   <td className="px-4 py-3 text-muted font-mono text-xs">{a.serialNumber || '—'}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-1">

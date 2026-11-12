@@ -58,7 +58,7 @@ export default function LicenseSeatsModal({ license, onClose, onChanged }) {
           </div>
           <button onClick={onClose} className="text-muted hover:text-white text-xs uppercase tracking-widest">
             Close
-          </button>
+          </button>   
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto px-5 py-5">

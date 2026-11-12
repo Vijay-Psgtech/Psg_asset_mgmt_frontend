@@ -17,7 +17,6 @@ const emptyForm = {
   warrantyExpiry: '',
   location: '',
   notes: '',
-  institution: '',
 };
 
 const toDateInput = (iso) => (iso ? new Date(iso).toISOString().slice(0, 10) : '');
@@ -31,26 +30,6 @@ export default function AssetForm() {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [institutions, setInstitutions] = useState([]);
-  const [institutionsLoading, setInstitutionsLoading] = useState(true);
-  const [institutionError, setInstitutionError] = useState('');
-
-  useEffect(() => {
-    let active = true;
-    client
-      .get('/institutions')
-      .then(({ data }) => {
-        const rows = Array.isArray(data) ? data : data.institutions;
-        if (active) setInstitutions(Array.isArray(rows) ? rows : []);
-      })
-      .catch((err) => {
-        if (active) setInstitutionError(err.response?.data?.message || 'Could not load institutions');
-      })
-      .finally(() => {
-        if (active) setInstitutionsLoading(false);
-      });
-    return () => { active = false; };
-  }, []);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -70,7 +49,6 @@ export default function AssetForm() {
           warrantyExpiry: toDateInput(a.warrantyExpiry),
           location: a.location || '',
           notes: a.notes || '',
-          institution: a.institution?._id || a.institution || '',
         });
       })
       .catch((err) => setError(err.response?.data?.message || 'Failed to load asset'))
@@ -89,7 +67,6 @@ export default function AssetForm() {
       purchaseCost: form.purchaseCost === '' ? undefined : Number(form.purchaseCost),
       purchaseDate: form.purchaseDate ? new Date(form.purchaseDate).toISOString() : undefined,
       warrantyExpiry: form.warrantyExpiry ? new Date(form.warrantyExpiry).toISOString() : undefined,
-      institution: form.institution || null,
     };
     // strip empty optional strings so zod optional() doesn't choke on ''
     Object.keys(payload).forEach((k) => {
@@ -139,19 +116,6 @@ export default function AssetForm() {
           <div>
             <label className="label">Location</label>
             <input className="input" value={form.location} onChange={update('location')} placeholder="HQ - Floor 3" />
-          </div>
-
-          <div className="col-span-2">
-            <label className="label">Institution</label>
-            <select className="input" value={form.institution} onChange={update('institution')} disabled={institutionsLoading}>
-              <option value="">{institutionsLoading ? 'Loading institutions...' : 'No institution'}</option>
-              {institutions.map((institution) => {
-                const value = institution._id || institution.id;
-                const label = institution.name || institution.institutionName || institution.institution;
-                return value && label ? <option key={value} value={value}>{label}</option> : null;
-              })}
-            </select>
-            {institutionError && <span className="mt-1 block text-xs text-red-500">{institutionError}</span>}
           </div>
 
           <div>
