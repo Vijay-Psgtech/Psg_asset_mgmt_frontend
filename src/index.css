@@ -401,6 +401,10 @@ button, input, textarea, select {
   @apply text-sm font-medium text-[#0f6cbd] transition-colors hover:text-[#0a5aa6];
 }
 
+.login-success {
+  @apply rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800;
+}
+
 .btn-primary {
   @apply inline-flex items-center justify-center rounded-xl bg-[#0f6cbd] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,108,189,0.2)] transition-all duration-200 hover:bg-[#0a5aa6] hover:shadow-[0_12px_28px_rgba(15,108,189,0.24)] disabled:cursor-not-allowed disabled:opacity-70;
 }

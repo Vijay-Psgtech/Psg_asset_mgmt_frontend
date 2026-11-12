@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
-import AppLayout from './layouts/AppLayout.jsx';
+import AppLayout, { hasMenuAccess } from './layouts/AppLayout.jsx';
+import { ErrorBanner } from './components/Common.jsx';
 
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
@@ -19,6 +20,7 @@ const Licenses = lazy(() => import('./pages/Licenses.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
 const UserDashboard = lazy(() => import('./pages/UserDashboard.jsx'));
 const Users = lazy(() => import('./pages/Users.jsx'));
+const Institutions = lazy(() => import('./pages/Institutions.jsx'));
 const Reports = lazy(() => import('./pages/Reports.jsx'));
 const Requirements = lazy(() => import('./pages/Requirements.jsx'));
 const SuperDashboard = lazy(() => import('./pages/SuperDashboard.jsx'));
@@ -42,12 +44,6 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
   return children;
-}
-
-function hasMenuAccess(user, accessKey) {
-  if (!user) return false;
-  if (user.role === 'superadmin') return true;
-  return Array.isArray(user.menuAccess) ? user.menuAccess.includes(accessKey) : false;
 }
 
 function MenuAccessRoute({ children, accessKey }) {
@@ -114,9 +110,20 @@ function NotFound() {
 }
 
 export default function App() {
+  const { bootstrapError, clearBootstrapError } = useAuth();
+
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[var(--bg)] text-sm text-accent">Loading workspace...</div>}>
-      <Routes>
+    <>
+      {bootstrapError && (
+        <div className="fixed inset-x-0 top-3 z-[100] mx-auto flex max-w-xl items-start gap-2 px-4">
+          <div className="flex-1"><ErrorBanner message={bootstrapError} /></div>
+          <button type="button" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" onClick={clearBootstrapError}>
+            Dismiss
+          </button>
+        </div>
+      )}
+      <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[var(--bg)] text-sm text-accent">Loading workspace...</div>}>
+        <Routes>
       <Route
         path="/login"
         element={
@@ -145,6 +152,7 @@ export default function App() {
         <Route path="licenses" element={<MenuAccessRoute accessKey="licenses"><Licenses /></MenuAccessRoute>} />
         <Route path="profile" element={<Profile />} />
         <Route path="users" element={<MenuAccessRoute accessKey="all-users"><Users /></MenuAccessRoute>} />
+        <Route path="institutions" element={<MenuAccessRoute accessKey="institutions"><Institutions /></MenuAccessRoute>} />
         <Route path="my-assets" element={<MenuAccessRoute accessKey="my-assets"><UserDashboard /></MenuAccessRoute>} />
         <Route path="requestable-items" element={<MenuAccessRoute accessKey="requestable-items"><RequestableItems /></MenuAccessRoute>} />
         <Route path="super-dashboard" element={<SuperOnlyRoute />} />
@@ -159,7 +167,8 @@ export default function App() {
         <Route path="calendar" element={<MenuAccessRoute accessKey="calendar"><Calendar /></MenuAccessRoute>} />
       </Route>
       <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+    </>
   );
 }

@@ -15,9 +15,14 @@ const serveAssetDetailRoute = (server) => {
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    include: ['src/**/*.{test,spec}.{js,jsx}'],
+  },
   configureServer: serveAssetDetailRoute,
   configurePreviewServer: serveAssetDetailRoute,
   server: {
+    host: '0.0.0.0',
     port: 5173,
     proxy: {
       '/api': {

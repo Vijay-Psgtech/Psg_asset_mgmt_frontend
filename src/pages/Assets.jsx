@@ -113,6 +113,7 @@ export default function Assets() {
                 <th className="text-left px-4 py-3">Tag</th>
                 <th className="text-left px-4 py-3">Name</th>
                 <th className="text-left px-4 py-3">Category</th>
+                <th className="text-left px-4 py-3">Institution</th>
                 <th className="text-left px-4 py-3">Status</th>
                 <th className="text-left px-4 py-3">Location</th>
                 <th className="text-left px-4 py-3">Serial</th>
@@ -129,6 +130,7 @@ export default function Assets() {
                   </td>
                   <td className="px-4 py-3 text-zinc-100">{a.name}</td>
                   <td className="px-4 py-3 text-muted">{a.category}</td>
+                  <td className="px-4 py-3 text-muted">{a.institution?.name || a.institution?.code || '—'}</td>
                   <td className="px-4 py-3"><StatusChip status={a.status} /></td>
                   <td className="px-4 py-3 text-muted">{a.location || '—'}</td>
                   <td className="px-4 py-3 text-muted font-mono text-xs">{a.serialNumber || '—'}</td>

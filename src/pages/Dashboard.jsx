@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -21,6 +21,12 @@ const statusColors = {
 };
 
 const formatNumber = (value) => new Intl.NumberFormat().format(value || 0);
+
+const describeRequestFailure = (label, error) => {
+  const status = error?.response?.status;
+  const reason = error?.response?.data?.message || 'request failed';
+  return `${label}${status ? ` (${status})` : ''}: ${reason}`;
+};
 
 const getGreeting = (date = new Date()) => {
   const hour = date.getHours();
@@ -48,25 +54,39 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const load = () => Promise.all([
-    api.get('/dashboard/summary'),
-    api.get('/dashboard/activity', { params: { limit: 8 } }),
-    api.get('/requirements/summary'),
-  ])
-    .then(([summaryRes, activityRes, requirementRes]) => {
-      setSummary(summaryRes.data);
-      setActivity(activityRes.data?.data || []);
-      setRequirementsSummary(requirementRes.data || null);
-      setError('');
-    })
-    .catch((err) => setError(err.response?.data?.message || 'Dashboard data could not be loaded.'))
-    .finally(() => setLoading(false));
+  const load = useCallback(async () => {
+    const results = await Promise.allSettled([
+      api.get('/dashboard/summary'),
+      api.get('/dashboard/activity', { params: { limit: 8 } }),
+      api.get('/requirements/summary'),
+    ]);
+
+    const failures = [];
+    const [summaryResult, activityResult, requirementsResult] = results;
+    if (summaryResult.status === 'fulfilled') {
+      setSummary(summaryResult.value.data);
+    } else {
+      failures.push(describeRequestFailure('Dashboard summary', summaryResult.reason));
+    }
+    if (activityResult.status === 'fulfilled') {
+      setActivity(activityResult.value.data?.data || []);
+    } else {
+      failures.push(describeRequestFailure('Recent activity', activityResult.reason));
+    }
+    if (requirementsResult.status === 'fulfilled') {
+      setRequirementsSummary(requirementsResult.value.data || null);
+    } else {
+      failures.push(describeRequestFailure('Requirements summary', requirementsResult.reason));
+    }
+    setError(failures.join(' '));
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     load();
     const timer = window.setInterval(load, 60000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [load]);
 
   const statuses = useMemo(() => Object.entries(summary?.byStatus || {}).map(([key, value]) => ({ key, label: statusLabels[key] || key, value, fill: statusColors[key] || '#64748b' })), [summary]);
   const categories = useMemo(() => Object.entries(summary?.byCategory || {}).slice(0, 7).map(([name, value]) => ({ name, value })), [summary]);

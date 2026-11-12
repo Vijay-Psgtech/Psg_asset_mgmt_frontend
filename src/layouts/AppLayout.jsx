@@ -9,7 +9,7 @@ const MENU = [
   { key: 'dashboard', label: 'Dashboard', icon: '⌂', to: '/', end: true },
   { key: 'calendar', label: 'Calendar', icon: '▦', to: '/calendar' },
   { key: 'super-dashboard', label: 'Super dashboard', icon: '✦', to: '/super-dashboard' },
-  { key: 'requirements', label: 'Requirements', icon: '✓', to: '/requirements' },
+  // { key: 'requirements', label: 'Requirements', icon: '✓', to: '/requirements' },
   {
     key: 'assets',
     label: 'Asset Management',
@@ -64,6 +64,7 @@ const MENU = [
     label: 'Settings',
     icon: '⚙',
     children: [
+      { key: 'institutions', label: 'Institutions', to: '/institutions' },
       { key: 'categories', label: 'Categories', to: '/profile' },
       { key: 'custom-fields', label: 'Custom Fields', to: '/profile' },
       { key: 'status-labels', label: 'Status Labels', to: '/profile' },
@@ -77,15 +78,21 @@ const MENU = [
 
 export const DEFAULT_ROLE_ACCESS = {
   superadmin: MENU.flatMap((item) => item.children ? [item.key, ...item.children.map((child) => child.key)] : [item.key]),
-  admin: ['dashboard', 'calendar', 'requirements', 'assets', 'all-assets', 'deployed-assets', 'ready-assets', 'pending-assets', 'undeployable-assets', 'byod-assets', 'archived-assets', 'requestable-assets', 'audit-due', 'checkin-due', 'add-asset', 'scan-asset', 'quick-scan-checkin', 'bulk-checkout', 'requested-assets', 'deleted-assets', 'scanner-audit', 'assignments', 'maintenance', 'inventory', 'accessories', 'consumables', 'licenses', 'documents', 'components', 'kits', 'reports', 'people', 'all-users', 'my-profile', 'audit-log', 'import', 'my-assets', 'requestable-items'],
-  asset_user: ['dashboard', 'calendar', 'my-assets', 'requestable-items', 'maintenance', 'documents', 'profile'],
+  admin: ['dashboard', 'calendar', 'requirements', 'assets', 'all-assets', 'deployed-assets', 'ready-assets', 'pending-assets', 'undeployable-assets', 'byod-assets', 'archived-assets', 'requestable-assets', 'audit-due', 'checkin-due', 'add-asset', 'scan-asset', 'quick-scan-checkin', 'bulk-checkout', 'requested-assets', 'deleted-assets', 'scanner-audit', 'assignments', 'maintenance', 'inventory', 'accessories', 'consumables', 'licenses', 'documents', 'components', 'kits', 'reports', 'people', 'all-users', 'institutions', 'my-profile', 'audit-log', 'import', 'my-assets', 'requestable-items'],
+  asset_user: ['dashboard', 'calendar', 'my-assets', 'requestable-items', 'documents', 'profile'],
 };
 
 export const MENU_ACCESS_OPTIONS = MENU.flatMap((item) => item.children ? item.children.map((child) => ({ key: child.key, label: child.label, route: child.to })) : [{ key: item.key, label: item.label, route: item.to }]);
 
 const getMenuAccessSet = (user) => {
   const access = Array.isArray(user?.menuAccess) && user.menuAccess.length ? user.menuAccess : DEFAULT_ROLE_ACCESS[user?.role] || [];
-  return new Set(access);
+  return new Set(access);  
+};
+
+export const hasMenuAccess = (user, accessKey) => {
+  if (!user) return false;
+  if (user.role === 'superadmin') return true;
+  return getMenuAccessSet(user).has(accessKey);
 };
 
 const getVisibleMenu = (user) => {
@@ -130,10 +137,11 @@ function MenuItem({ item, open, onToggle }) {
 }
 
 export default function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user, institutions, switchInstitution, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [openGroups, setOpenGroups] = useState(() => Object.fromEntries(MENU.filter((item) => item.children).map((item) => [item.label, true])));
+  const [institutionMenuOpen, setInstitutionMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -160,7 +168,7 @@ export default function AppLayout() {
     setMobileNavOpen(false);
   }, [location.pathname]);
 
-  useEffect(() => {
+  useEffect(() => {  
     const onShortcut = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
@@ -168,8 +176,8 @@ export default function AppLayout() {
       }
       if (event.key === 'Escape') {
         setPaletteOpen(false);
-        setCreateOpen(false);
-        setProfileOpen(false);
+        setCreateOpen(false); 
+        setProfileOpen(false);  
       }
     };
     window.addEventListener('keydown', onShortcut);
@@ -189,16 +197,20 @@ export default function AppLayout() {
       setAssetResults([]);
       return undefined;
     }
+    if (user?.role !== 'superadmin' && !user?.institution) {
+      setAssetResults([]);
+      return undefined;
+    }
     const timer = window.setTimeout(() => {
       api.get('/assets', { params: { search: search.trim(), limit: 6 } })
         .then(({ data }) => setAssetResults(data.items || data.data || data || []))
         .catch(() => setAssetResults([]));
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [search]);
+  }, [search, user]);
 
   useEffect(() => {
-    if (!user) return undefined;
+    if (!user || (user.role !== 'superadmin' && !user.institution)) return undefined;
     let active = true;
     const loadNotifications = () => api.get('/notifications', { params: { limit: 30 } })
       .then(({ data }) => active && setNotifications(data.notifications || []))
@@ -253,6 +265,33 @@ export default function AppLayout() {
       <header className="app-header sticky top-0 z-20 flex min-h-16 flex-wrap items-center gap-2 border-b border-line bg-[#fff] px-3 py-2 text-ink shadow-sm sm:gap-3 sm:px-5">
         <button type="button" onClick={() => setMobileNavOpen((value) => !value)} className="rounded border border-line px-3 py-2 text-xs text-muted lg:hidden" aria-label="Toggle navigation">Menu</button>
         <div className="mr-auto min-w-0"><div className="truncate text-[10px] font-mono uppercase tracking-[0.18em] text-muted">Workspace</div><div className="truncate text-base font-semibold text-[#1d2a38]">{currentLabel}</div></div>
+        {(institutions?.length || user?.institution) && (
+          <div className="relative">
+            <button type="button" onClick={() => setInstitutionMenuOpen((value) => !value)} className="rounded border border-[#dfe7f1] bg-[#f5f7fa] px-3 py-2 text-xs font-medium text-[#49607a]">
+              {user?.institution?.name || user?.institution?.code || 'Institution'}
+            </button>
+            {institutionMenuOpen && (
+              <div className="absolute right-0 top-11 z-50 w-56 rounded-md border border-line bg-panel text-ink shadow-xl">
+                {institutions.length ? institutions.map((institution) => (
+                  <button
+                    key={institution.id || institution._id}
+                    type="button"
+                    onClick={async () => {
+                      setInstitutionMenuOpen(false);
+                      if ((user?.institution?._id || user?.institution?.id) !== (institution.id || institution._id)) {
+                        await switchInstitution(institution.id || institution._id);
+                        window.location.reload();
+                      }
+                    }}
+                    className="block w-full px-3 py-2 text-left text-xs hover:bg-[#f1f5f9]"
+                  >
+                    {institution.name || institution.code}
+                  </button>
+                )) : <div className="px-3 py-2 text-xs text-muted">No institutions</div>}
+              </div>
+            )}
+          </div>
+        )}
         <div className="relative hidden w-64 md:block"><input value={search} onFocus={() => setPaletteOpen(true)} onChange={(e) => setSearch(e.target.value)} placeholder="Search asset tag..." className="w-full rounded-md border border-[#dfe7f1] bg-[#f5f7fa] px-3 py-2 text-xs text-ink outline-none placeholder:text-muted focus:border-[#8db3ff]" />{search && <button onClick={() => setSearch('')} className="absolute right-2 top-1.5 text-sm text-muted">×</button>}{search && paletteOpen && <div className="absolute left-0 top-11 z-50 w-full rounded-md border border-line bg-[#fff] py-2 text-ink shadow-xl">{assetResults.length ? assetResults.map((asset) => <button type="button" onClick={() => go(`/assets/${asset._id}`)} className="block w-full px-3 py-2 text-left hover:bg-[#f3f7fb]" key={asset._id}><div className="text-xs font-semibold">{asset.name}</div><div className="text-[10px] text-muted">{asset.assetTag} · {asset.status}</div></button>) : <div className="px-3 py-2 text-xs text-muted">No matching assets</div>}</div>}</div>
         <button onClick={() => setPaletteOpen(true)} className="hidden rounded border border-[#dfe7f1] bg-[#f5f7fa] px-2 py-2 text-[10px] font-medium text-[#49607a] lg:block">CTRL K</button>
         <button type="button" onClick={() => setPaletteOpen(true)} className="rounded border border-[#dfe7f1] bg-[#f5f7fa] px-3 py-2 text-xs font-medium text-[#49607a] md:hidden" aria-label="Search assets">Search</button>
@@ -262,7 +301,19 @@ export default function AppLayout() {
         {user?.role !== 'asset_user' && <div className="relative"><button onClick={() => setCreateOpen((value) => !value)} className="rounded-lg bg-[#0f5bb8] px-4 py-2 text-xs font-semibold text-white shadow-[0_10px_18px_rgba(15,91,184,0.18)] transition hover:bg-[#0b3f7a]">Create new ▾</button>{createOpen && <div className="absolute right-0 top-11 w-52 rounded-md border border-line bg-panel py-2 text-sm text-ink shadow-xl">{CREATE_ITEMS.map(([label, to]) => <Link onClick={() => setCreateOpen(false)} className="block px-4 py-2 hover:bg-[#f1f5f9] hover:text-accent" key={to} to={to}>{label}</Link>)}</div>}</div>}
         <div className="relative"><button onClick={() => setProfileOpen((value) => !value)} className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-[#f3f7fb]"><ProfileAvatar user={user} size="xs" className="ring-0" /><span className="hidden text-xs font-semibold text-[#1d2a38] sm:block">{user?.name || 'Admin'}</span><span className="text-xs text-muted">▾</span></button>{profileOpen && <div className="absolute right-0 top-11 w-44 rounded-md border border-line bg-panel py-2 text-sm text-ink shadow-xl"><Link className="block px-4 py-2 hover:bg-[#f1f5f9]" to="/profile">My profile</Link><Link className="block px-4 py-2 hover:bg-[#f1f5f9]" to="/reports">Reports</Link><button onClick={logout} className="block w-full px-4 py-2 text-left hover:bg-[#f1f5f9]">Sign out</button></div>}</div>
       </header>
-      <main className="flex-1 bg-[var(--bg)]"><div className="page-enter mx-auto w-full max-w-[1440px] px-3 py-4 sm:px-5 sm:py-6 lg:px-8"><Outlet /></div></main>
+      <main className="flex-1 bg-[var(--bg)]"><div className="page-enter mx-auto w-full max-w-[1440px] px-3 py-4 sm:px-5 sm:py-6 lg:px-8">
+        {user?.role !== 'superadmin' && !user?.institution && location.pathname !== '/profile' ? (
+          <section className="mx-auto max-w-2xl rounded-2xl border border-amber-200 bg-white p-6 shadow-sm" role="alert">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Institution access required</p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-900">Your account is not assigned to an institution</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Asset and dashboard data is isolated by institution. Ask a superadmin to assign your account to the correct institution, then sign out and sign in again.
+            </p>
+            <p className="mt-3 text-sm text-slate-500">Your account and profile remain available; workspace data is blocked until an assignment is made.</p>
+            <Link to="/profile" className="btn-outline mt-5 inline-flex">Open profile</Link>
+          </section>
+        ) : <Outlet />}
+      </div></main>
     </div>
     {paletteOpen && <div className="fixed inset-0 z-40 bg-[#10212a]/50 p-4 pt-[12vh]" onMouseDown={() => setPaletteOpen(false)}><div className="app-palette mx-auto max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl" onMouseDown={(event) => event.stopPropagation()}><div className="border-b border-slate-200 px-4 py-3"><input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search assets or type a command..." className="w-full text-sm text-[#172033] outline-none" /></div><div className="max-h-80 overflow-y-auto p-2">{search && assetResults.map((asset) => <button type="button" onClick={() => go(`/assets/${asset._id}`)} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-blue-50" key={asset._id}><span className="text-accent">▦</span><span><b className="block text-sm text-[#172033]">{asset.name}</b><small className="text-xs text-slate-500">{asset.assetTag} · {asset.status}</small></span></button>)}{!search && commands.map(([label, path, icon]) => <button type="button" onClick={() => go(path)} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-blue-50" key={path}><span className="grid h-7 w-7 place-items-center rounded bg-blue-50 text-accent">{icon}</span><span className="text-sm text-[#172033]">{label}</span><span className="ml-auto text-xs text-slate-400">↵</span></button>)}{search && !assetResults.length && <div className="p-5 text-center text-sm text-slate-500">No results found.</div>}</div><div className="border-t border-slate-200 px-4 py-2 text-[10px] text-slate-400">ESC to close · CTRL K to open</div></div></div>}
   </div>;

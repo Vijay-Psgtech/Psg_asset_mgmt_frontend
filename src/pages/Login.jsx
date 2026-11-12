@@ -9,49 +9,69 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [institutions, setInstitutions] = useState([]);
-  const [institution, setInstitution] = useState('');
-  const [institutionsLoading, setInstitutionsLoading] = useState(true);
+  const resetToken = new URLSearchParams(location.search).get('resetToken') || '';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [mode, setMode] = useState(resetToken ? 'reset' : 'login');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    let active = true;
-
-    client.get('/institutions')
-      .then(({ data }) => {
-        const rows = Array.isArray(data) ? data : data.institutions;
-        if (!active) return;
-        setInstitutions(Array.isArray(rows) ? rows : []);
-      })
-      .catch(() => {
-        if (active) setError('Could not load institutions. Please refresh and try again.');
-      })
-      .finally(() => {
-        if (active) setInstitutionsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    setMode(resetToken ? 'reset' : 'login');
+    setError('');
+  }, [resetToken]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setMessage('');
+    if (mode === 'reset' && password !== confirmPassword) {
+      setError('The passwords do not match.');
+      return;
+    }
     setSubmitting(true);
     try {
-      await login(email, password, institution);
-      navigate(location.state?.from || '/', { replace: true });
+      if (mode === 'forgot') {
+        const { data } = await client.post('/auth/forgot-password', { email: email.trim() });
+        setMessage(data.message);
+      } else if (mode === 'reset') {
+        const { data } = await client.post('/auth/reset-password', { token: resetToken, password });
+        setPassword('');
+        setConfirmPassword('');
+        navigate('/login', { replace: true });
+        setMode('login');
+        setMessage(data.message);
+      } else {
+        const user = await login(email, password);
+        navigate(location.state?.from || (user.role === 'asset_user' ? '/my-assets' : '/'), { replace: true });
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Check your credentials.');
+      setError(err.response?.data?.message || (
+        mode === 'login' ? 'Login failed. Check your credentials.' : 'Unable to complete your request. Please try again.'
+      ));
     } finally {
       setSubmitting(false);
     }
   };
+
+  const changeMode = (nextMode) => {
+    setError('');
+    setMessage('');
+    setPassword('');
+    setConfirmPassword('');
+    if (resetToken) navigate('/login', { replace: true });
+    setMode(nextMode);
+  };
+
+  const heading = mode === 'forgot' ? 'Forgot your password?' : mode === 'reset' ? 'Choose a new password' : 'Sign in to Asset Manager';
+  const subtitle = mode === 'forgot'
+    ? 'Enter your work email and we’ll send you a secure reset link.'
+    : mode === 'reset'
+      ? 'Your new password must be at least 8 characters.'
+      : 'Use your organization credentials to continue.';
 
   return (
     <div className="login-shell">
@@ -90,63 +110,46 @@ export default function Login() {
 
         <div className="login-form-panel">
           <div className="login-form-header">
-            <p className="login-kicker">Welcome back</p>
-            <h2>Sign in to Asset Manager</h2>
-            <p className="login-form-subtitle">Use your organization credentials to continue.</p>
+            <p className="login-kicker">{mode === 'login' ? 'Welcome back' : 'Account recovery'}</p>
+            <h2>{heading}</h2>
+            <p className="login-form-subtitle">{subtitle}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
             <ErrorBanner message={error} />
+            {message && <div className="login-success" role="status">{message}</div>}
 
-            <div className="field-group">
-              <label className="label" htmlFor="institution">Institution</label>
-              <select
-                id="institution"
-                className="input"
-                value={institution}
-                onChange={(e) => setInstitution(e.target.value)}
-                required
-                disabled={institutionsLoading}
-              >
-                <option value="all">All institutions</option>
-                <option value="">
-                  {institutionsLoading ? 'Loading institutions…' : 'Select your institution'}
-                </option>
-                {institutions.map((item) => {
-                  const value = item._id || item.id || item.name;
-                  const label = item.name || item.institutionName || item.institution;
-                  return value && label ? <option key={value} value={value}>{label}</option> : null;
-                })}
-              </select>
-            </div>
+            {mode !== 'reset' && (
+              <div className="field-group">
+                <label className="label" htmlFor="login-email">Work email</label>
+                <input
+                  id="login-email"
+                  className="input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@organization.com"
+                  required
+                  autoComplete="username"
+                  autoFocus
+                />
+              </div>
+            )}
 
-            <div className="field-group">
-              <label className="label" htmlFor="email">Work email</label>
-              <input
-                id="email"
-                className="input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="superadmin@gmail.com"
-                required
-                autoComplete="username"
-                autoFocus
-              />
-            </div>
-
-            <div className="field-group">
-              <label className="label" htmlFor="password">Password</label>
+            {mode !== 'forgot' && <div className="field-group">
+              <label className="label" htmlFor="login-password">{mode === 'reset' ? 'New password' : 'Password'}</label>
               <div className="password-wrap">
                 <input
-                  id="password"
+                  id="login-password"
                   className="input"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="super@123"
+                  placeholder={mode === 'login' ? 'Enter your password' : 'At least 8 characters'}
                   required
-                  autoComplete="current-password"
+                  minLength={mode === 'reset' ? 8 : undefined}
+                  maxLength={128}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 />
                 <button
                   type="button"
@@ -157,25 +160,53 @@ export default function Login() {
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
               </div>
-            </div>
+            </div>}
 
-            <div className="login-meta">
-              <label className="remember-me">
-                <input type="checkbox" defaultChecked />
-                <span>Remember me</span>
-              </label>
-              <a href="#" className="login-link">Need help?</a>
-            </div>
+            {mode === 'reset' && (
+              <div className="field-group">
+                <label className="label" htmlFor="confirm-password">Confirm new password</label>
+                <input
+                  id="confirm-password"
+                  className="input"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter your new password"
+                  required
+                  minLength={8}
+                  maxLength={128}
+                  autoComplete="new-password"
+                />
+              </div>
+            )}
+
+            {mode === 'login' && (
+              <div className="login-meta">
+                <label className="remember-me">
+                  <input type="checkbox" defaultChecked />
+                  <span>Remember me</span>
+                </label>
+                <button type="button" className="login-link" onClick={() => changeMode('forgot')}>Forgot password?</button>
+              </div>
+            )}
 
             <button type="submit" className="btn-primary w-full" disabled={submitting}>
-              {submitting ? 'Signing In…' : 'Sign In'}
+              {submitting
+                ? (mode === 'login' ? 'Signing In…' : mode === 'forgot' ? 'Sending…' : 'Updating…')
+                : (mode === 'login' ? 'Sign In' : mode === 'forgot' ? 'Send Reset Link' : 'Reset Password')}
             </button>
           </form>
 
-          <div className="login-footer">
-            <div><strong>Demo access:</strong> <span>superadmin@gmail.com / super@123</span></div>
-            <div>New to the system? Run <code>npm run seed</code> on the server.</div>
-          </div>
+          {mode !== 'login' ? (
+            <div className="login-footer">
+              <button type="button" className="login-link" onClick={() => changeMode('login')}>Back to sign in</button>
+            </div>
+          ) : (
+            <div className="login-footer">
+              <div><strong>Demo access:</strong> <span>superadmin@gmail.com / super@123</span></div>
+              <div>New to the system? Run <code>npm run seed</code> on the server.</div>
+            </div>
+          )}
         </div>
       </div>
     </div>
