@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const apiTarget = process.env.VITE_API_TARGET || 'http://localhost:5010';
+const apiTarget = process.env.VITE_API_URL || 'http://localhost:5010';
 const assetDetailPath = /^\/assets\/[a-f\d]{24}$/i;
 
 const serveAssetDetailRoute = (server) => {
@@ -24,6 +24,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: ['localhost', 'assettest.psginstitutions.in'],
     proxy: {
       '/api': {
         target: apiTarget,
