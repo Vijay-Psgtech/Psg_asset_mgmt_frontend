@@ -3,6 +3,7 @@ import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import AppLayout, { hasMenuAccess } from './layouts/AppLayout.jsx';
 import { ErrorBanner } from './components/Common.jsx';
+import useAutoLogout from './hooks/useAutoLogout.jsx';
 
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
@@ -111,6 +112,7 @@ function NotFound() {
 
 export default function App() {
   const { bootstrapError, clearBootstrapError } = useAuth();
+  useAutoLogout(); // Automatically log out the user after a period of inactivity
 
   return (
     <>

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import client from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import StatusChip from '../components/StatusChip.jsx';
 import { Spinner, ErrorBanner, EmptyState } from '../components/Common.jsx';
 
@@ -8,6 +9,7 @@ const CATEGORIES = ['Laptop', 'Desktop', 'Monitor', 'Phone', 'Tablet', 'Server',
 const STATUSES = ['available', 'assigned', 'in_maintenance', 'retired', 'lost', 'byod', 'deleted'];
 
 export default function Assets() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
@@ -49,6 +51,7 @@ export default function Assets() {
         name: `${asset.name} (copy)`, category: asset.category, brand: asset.brand,
         model: asset.model, purchaseCost: asset.purchaseCost, vendor: asset.vendor,
         warrantyExpiry: asset.warrantyExpiry, location: asset.location, notes: asset.notes,
+        ...(user?.role === 'superadmin' ? { institutionId: asset.institution?._id || asset.institution?.id || asset.institution } : {}),
       };
       await client.post('/assets', payload);
       fetchAssets(pagination.page);
