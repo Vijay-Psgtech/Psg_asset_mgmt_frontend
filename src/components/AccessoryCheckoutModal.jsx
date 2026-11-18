@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../api/client.js';
 
 export default function AccessoryCheckoutModal({ accessory, onClose, onChanged }) {
@@ -58,27 +59,27 @@ export default function AccessoryCheckoutModal({ accessory, onClose, onChanged }
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-xs" role="presentation">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="accessory-checkouts-title"
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto border border-white/10 bg-ink shadow-2xl"
+        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden border border-white/10 bg-ink shadow-2xl"
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
             <h2 id="accessory-checkouts-title" className="stencil text-sm font-semibold uppercase tracking-widest text-white">
               {accessory.name} — Checkouts
             </h2>
             <p className="text-[10px] uppercase tracking-widest text-muted">{available} available of {accessory.totalQty}</p>
           </div>
-          <button disabled={loading} onClick={onClose} className="text-muted hover:text-white text-xs uppercase tracking-widest disabled:opacity-50">
+          <button type="button" disabled={loading} onClick={onClose} className="text-muted hover:text-white text-xs uppercase tracking-widest disabled:opacity-50">
             Close
           </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto px-5 py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
           <div className="mb-4 divide-y divide-white/5 border border-white/10">
             {active.length === 0 && returned.length === 0 ? (
               <p className="px-3 py-6 text-center text-xs text-muted">Nothing checked out yet.</p>
@@ -156,6 +157,7 @@ export default function AccessoryCheckoutModal({ accessory, onClose, onChanged }
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

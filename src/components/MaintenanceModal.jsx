@@ -100,7 +100,7 @@ export default function MaintenanceModal({ mode, record, onClose, onSaved }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-x" role="presentation">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-xs" role="presentation">
       <div
         role="dialog"
         aria-modal="true"
