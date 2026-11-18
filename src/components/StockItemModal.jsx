@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../api/client.js';
 
 /**
@@ -60,19 +61,24 @@ export default function StockItemModal({ resource, item, onClose, onSaved }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-2 sm:p-4">
-      <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-[820px] overflow-y-auto rounded-md border border-white/10 bg-[#071d2d] shadow-[0_26px_65px_rgba(15,23,42,0.32)] sm:max-h-[calc(100dvh-2rem)]">
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-5 sm:py-3.5">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-slate-950/35 p-2 sm:p-4" role="presentation">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="stock-item-modal-title"
+        className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[820px] flex-col overflow-hidden rounded-md border border-white/10 bg-[#071d2d] shadow-[0_26px_65px_rgba(15,23,42,0.32)] sm:max-h-[calc(100dvh-2rem)]"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3 sm:px-5 sm:py-3.5">
           <h2 className="stencil text-[11px] font-semibold uppercase tracking-[0.22em] text-[#eef6ff]">
             {isEdit ? 'Edit Item' : 'New Item'}
           </h2>
-          <button onClick={onClose} className="text-[10px] uppercase tracking-[0.2em] text-slate-300 transition hover:text-white">
+          <button type="button" onClick={onClose} className="text-[10px] uppercase tracking-[0.2em] text-slate-300 transition hover:text-white">
             Close
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid max-h-[70vh] gap-3 overflow-y-auto px-3 py-3 sm:px-5 sm:py-4">
+        <form onSubmit={handleSubmit} className="grid min-h-0 flex-1 gap-3 overflow-y-auto px-3 py-3 sm:px-5 sm:py-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Name" fullWidth>
               <input value={form.name} onChange={handleChange('name')} className="input h-[42px] rounded-xl border border-white/10 bg-white text-[#0f172a]" required />
@@ -119,7 +125,7 @@ export default function StockItemModal({ resource, item, onClose, onSaved }) {
 
           {error && <p className="text-xs text-red-300">{error}</p>}
 
-          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+          <div className="sticky bottom-0 -mx-3 flex flex-col-reverse gap-2 border-t border-white/10 bg-[#071d2d] px-3 py-2 sm:-mx-5 sm:flex-row sm:justify-end sm:px-5">
             <button
               type="button"
               onClick={onClose}
@@ -137,7 +143,8 @@ export default function StockItemModal({ resource, item, onClose, onSaved }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
