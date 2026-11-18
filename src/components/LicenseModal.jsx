@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../api/client.js';
 
 export default function LicenseModal({ license, onClose, onSaved }) {
@@ -56,11 +57,15 @@ export default function LicenseModal({ license, onClose, onSaved }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto border border-white/10 bg-ink shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <h2 className="stencil text-sm font-semibold uppercase tracking-widest text-white">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-xs" role="presentation">
+      <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="license-title"
+      className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto border border-white/10 bg-ink shadow-2xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
+          <h2 id="license-title" className="stencil text-sm font-semibold uppercase tracking-widest text-white">
             {isEdit ? 'Edit License' : 'New License'}
           </h2>
           <button onClick={onClose} className="text-muted hover:text-white text-xs uppercase tracking-widest">
@@ -147,7 +152,8 @@ export default function LicenseModal({ license, onClose, onSaved }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
