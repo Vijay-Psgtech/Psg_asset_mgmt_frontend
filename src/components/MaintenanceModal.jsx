@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../api/client.js';
 
 const TYPES = ['Repair', 'Scheduled Service', 'Inspection', 'Upgrade', 'Other'];
@@ -98,11 +99,15 @@ export default function MaintenanceModal({ mode, record, onClose, onSaved }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto border border-white/10 bg-ink shadow-2xl">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-x" role="presentation">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="maintenance-modal-title"
+        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden border border-white/10 bg-ink shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <h2 className="stencil text-sm font-semibold uppercase tracking-widest text-white">
+          <h2 id="maintenance-modal-title" className="stencil text-sm font-semibold uppercase tracking-widest text-white">
             {mode === 'create' ? 'New Maintenance Record' : `Update — ${record?.asset?.assetTag || ''}`}
           </h2>
           <button onClick={onClose} className="text-muted hover:text-white text-xs uppercase tracking-widest">
@@ -246,7 +251,8 @@ export default function MaintenanceModal({ mode, record, onClose, onSaved }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
