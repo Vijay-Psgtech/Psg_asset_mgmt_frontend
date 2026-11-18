@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../api/client.js';
 
 export default function ConsumableIssueModal({ consumable, onClose, onChanged }) {
@@ -39,19 +40,23 @@ export default function ConsumableIssueModal({ consumable, onClose, onChanged })
     }
   };     
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto border border-white/10 bg-ink shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-xs" role="presentation">
+      <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="consumable-issues-title"
+      className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto border border-white/10 bg-ink shadow-2xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
-            <h2 className="stencil text-sm font-semibold uppercase tracking-widest text-white">
+            <h2 id="consumable-issues-title" className="stencil text-sm font-semibold uppercase tracking-widest text-white">
               {consumable.name} — Issue Log 
             </h2>
             <p className="text-[10px] uppercase tracking-widest text-muted">
               {remaining} remaining of {consumable.totalQty}
             </p>
           </div>
-          <button onClick={onClose} className="text-muted hover:text-white text-xs uppercase tracking-widest">
+          <button type="button" onClick={onClose} className="text-muted hover:text-white text-xs uppercase tracking-widest">
             Close
           </button>
         </div>
@@ -121,6 +126,7 @@ export default function ConsumableIssueModal({ consumable, onClose, onChanged })
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
