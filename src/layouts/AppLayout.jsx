@@ -268,10 +268,11 @@ export default function AppLayout() {
         {(institutions?.length || user?.institution) && (
           <div className="relative">
             <button type="button" onClick={() => setInstitutionMenuOpen((value) => !value)} className="rounded border border-[#dfe7f1] bg-[#f5f7fa] px-3 py-2 text-xs font-medium text-[#49607a]">
-              {user?.institution?.name || user?.institution?.code || 'Institution'}
+              {user?.role === 'superadmin' ? 'All institutions' : user?.institution?.name || user?.institution?.code || 'Institution'}
             </button>
             {institutionMenuOpen && (
               <div className="absolute right-0 top-11 z-50 w-56 rounded-md border border-line bg-panel text-ink shadow-xl">
+                {user?.role === 'superadmin' && <div className="border-b border-line px-3 py-2 text-[10px] uppercase tracking-wide text-muted">Default institution for new records</div>}
                 {institutions.length ? institutions.map((institution) => (
                   <button
                     key={institution.id || institution._id}
