@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import client from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBanner, Spinner } from '../components/Common.jsx';
 
 const CATEGORIES = ['Laptop', 'Desktop', 'Monitor', 'Phone', 'Tablet', 'Server', 'Networking', 'Peripheral', 'Software License', 'Other'];
@@ -25,11 +26,33 @@ export default function AssetForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [form, setForm] = useState(emptyForm);
+  const [institutionId, setInstitutionId] = useState('');
+  const [institutions, setInstitutions] = useState([]);
+  const [institutionsLoading, setInstitutionsLoading] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isEdit || user?.role !== 'superadmin') return;
+    let active = true;
+    setInstitutionsLoading(true);
+    client
+      .get('/institutions', { params: { status: 'active' } })
+      .then(({ data }) => {
+        if (active) setInstitutions(data.institutions || []);
+      })
+      .catch((err) => {
+        if (active) setError(err.response?.data?.message || 'Failed to load institutions');
+      })
+      .finally(() => {
+        if (active) setInstitutionsLoading(false);
+      });
+    return () => { active = false; };
+  }, [isEdit, user?.role]);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -64,6 +87,7 @@ export default function AssetForm() {
 
     const payload = {
       ...form,
+      ...(user?.role === 'superadmin' && !isEdit ? { institutionId } : {}),
       purchaseCost: form.purchaseCost === '' ? undefined : Number(form.purchaseCost),
       purchaseDate: form.purchaseDate ? new Date(form.purchaseDate).toISOString() : undefined,
       warrantyExpiry: form.warrantyExpiry ? new Date(form.warrantyExpiry).toISOString() : undefined,
@@ -99,6 +123,29 @@ export default function AssetForm() {
         <ErrorBanner message={error} />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {!isEdit && user?.role === 'superadmin' && (
+            <div className="col-span-2">
+              <label className="label" htmlFor="asset-institution">Institution *</label>
+              <select
+                id="asset-institution"
+                className="input"
+                value={institutionId}
+                onChange={(event) => setInstitutionId(event.target.value)}
+                required
+                disabled={institutionsLoading || !institutions.length}
+              >
+                <option value="">{institutionsLoading ? 'Loading institutions…' : 'Select an institution'}</option>
+                {institutions.map((institution) => (
+                  <option key={institution.id || institution._id} value={institution.id || institution._id}>
+                    {institution.name}{institution.code ? ` (${institution.code})` : ''}
+                  </option>
+                ))}
+              </select>
+              {!institutionsLoading && !institutions.length && (
+                <span className="mt-1 block text-xs text-red-600">No active institutions available.</span>
+              )}
+            </div>
+          )}
           <div className="col-span-2">
             <label className="label">Name *</label>
             <input className="input" value={form.name} onChange={update('name')} placeholder="MacBook Pro 14&quot;" required />
@@ -160,7 +207,7 @@ export default function AssetForm() {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="submit" className="btn-primary" disabled={saving}>
+          <button type="submit" className="btn-primary" disabled={saving || (!isEdit && user?.role === 'superadmin' && (institutionsLoading || !institutionId))}>
             {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Asset'}
           </button>
           <button type="button" className="btn-ghost" onClick={() => navigate(-1)}>
