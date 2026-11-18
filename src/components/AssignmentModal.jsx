@@ -27,7 +27,7 @@ export default function AssignmentModal({ mode, assignment, onClose, onSaved }) 
       // ASSUMPTION: GET /api/assets?status=Available exists on your assets API
       api
         .get('/assets', { params: { status: 'available' } })
-        .then((res) => setAvailableAssets(res.data?.data || res.data || []))
+        .then((res) => setAvailableAssets(res.data?.items || res.data || []))
         .catch(() => setAvailableAssets([]));
     }
   }, [mode]);
