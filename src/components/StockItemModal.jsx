@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 /**
  * `resource` is the API path segment: 'accessories' or 'consumables'.
@@ -8,8 +9,12 @@ import api from '../api/client.js';
  */
 export default function StockItemModal({ resource, item, onClose, onSaved }) {
   const isEdit = Boolean(item);
+  const { user, institutions } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [institutionId, setInstitutionId] = useState(
+    item?.institution?.id || item?.institution?._id || ''
+  );
 
   const [form, setForm] = useState({
     name: item?.name || '',
@@ -47,6 +52,14 @@ export default function StockItemModal({ resource, item, onClose, onSaved }) {
         cost: form.cost === '' ? undefined : Number(form.cost),
         notes: form.notes,
       };
+      if (user?.role === 'superadmin') {
+        payload.institutionId = institutionId;
+        if (!institutionId) {
+          setError('Select an institution.');
+          setLoading(false);
+          return;
+        }
+      }
 
       if (isEdit) {
         await api.patch(`/${resource}/${item._id}`, payload);
@@ -80,6 +93,24 @@ export default function StockItemModal({ resource, item, onClose, onSaved }) {
 
         <form onSubmit={handleSubmit} className="grid min-h-0 flex-1 gap-3 overflow-y-auto px-3 py-3 sm:px-5 sm:py-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {user?.role === 'superadmin' && (
+              <Field label="Institution" fullWidth>
+                <select
+                  value={institutionId}
+                  onChange={(event) => setInstitutionId(event.target.value)}
+                  className="input h-[42px] rounded-xl border border-white/10 bg-white text-[#0f172a]"
+                  required
+                  disabled={!institutions.length}
+                >
+                  <option value="">Select an institution</option>
+                  {institutions.map((institution) => (
+                    <option key={institution.id || institution._id} value={institution.id || institution._id}>
+                      {institution.name}{institution.code ? ` (${institution.code})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
             <Field label="Name" fullWidth>
               <input value={form.name} onChange={handleChange('name')} className="input h-[42px] rounded-xl border border-white/10 bg-white text-[#0f172a]" required />
             </Field>
