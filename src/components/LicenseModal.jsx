@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export default function LicenseModal({ license, onClose, onSaved }) {
   const isEdit = Boolean(license);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { user, institutions } = useAuth();
+  const [institutionId, setInstitutionId] = useState(
+    license?.institution?.id || license?.institution?._id || ''
+  );
 
   const [form, setForm] = useState({
     name: license?.name || '',
@@ -44,6 +49,15 @@ export default function LicenseModal({ license, onClose, onSaved }) {
         notes: form.notes,
       };
 
+      if (user?.role === 'superadmin') {
+        payload.institutionId = institutionId;
+        if (!institutionId) {
+          setError('Select an institution.');
+          setLoading(false);
+          return;
+        }
+      }
+
       if (isEdit) {
         await api.patch(`/licenses/${license._id}`, payload);
       } else {
@@ -59,11 +73,11 @@ export default function LicenseModal({ license, onClose, onSaved }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-xs" role="presentation">
-      <div 
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="license-title"
-      className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto border border-white/10 bg-ink shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="license-title"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto border border-white/10 bg-ink shadow-2xl">
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
           <h2 id="license-title" className="stencil text-sm font-semibold uppercase tracking-widest text-white">
             {isEdit ? 'Edit License' : 'New License'}
@@ -74,6 +88,18 @@ export default function LicenseModal({ license, onClose, onSaved }) {
         </div>
 
         <form onSubmit={handleSubmit} className="max-h-[70vh] space-y-4 overflow-y-auto px-5 py-5">
+          {user?.role === 'superadmin' && (
+            <Field label="Institution">
+              <select value={institutionId} onChange={(e) => setInstitutionId(e.target.value)} className="input" required>
+                <option value="">Select an institution</option>
+                {institutions?.map((inst) => (
+                  <option key={inst._id} value={inst._id}>
+                    {inst.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
           <Field label="Name">
             <input value={form.name} onChange={handleChange('name')} className="input" required />
           </Field>
@@ -108,7 +134,7 @@ export default function LicenseModal({ license, onClose, onSaved }) {
                 min="0"
                 step="0.01"
                 value={form.cost}
-                onChange={handleChange('cost')}    
+                onChange={handleChange('cost')}
                 className="input"
               />
             </Field>
