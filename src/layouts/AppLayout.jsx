@@ -86,7 +86,13 @@ export const MENU_ACCESS_OPTIONS = MENU.flatMap((item) => item.children ? item.c
 
 const getMenuAccessSet = (user) => {
   const access = Array.isArray(user?.menuAccess) && user.menuAccess.length ? user.menuAccess : DEFAULT_ROLE_ACCESS[user?.role] || [];
-  return new Set(access);  
+  const accessSet = new Set(access);
+  if (user?.role === 'admin') {
+    const inventory = MENU.find((item) => item.key === 'inventory');
+    accessSet.add('inventory');
+    inventory?.children.forEach((child) => accessSet.add(child.key));
+  }
+  return accessSet;
 };
 
 export const hasMenuAccess = (user, accessKey) => {
