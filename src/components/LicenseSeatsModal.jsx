@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../api/client.js';
 
 export default function LicenseSeatsModal({ license, onClose, onChanged }) {
@@ -44,9 +45,9 @@ export default function LicenseSeatsModal({ license, onClose, onChanged }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto border border-white/10 bg-ink shadow-2xl">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs" role="presentation">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto border border-white/10 bg-ink shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
             <h2 className="stencil text-sm font-semibold uppercase tracking-widest text-white">
@@ -130,6 +131,7 @@ export default function LicenseSeatsModal({ license, onClose, onChanged }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
