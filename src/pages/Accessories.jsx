@@ -56,6 +56,7 @@ export default function Accessories() {
         name: `${row.name} (copy)`, category: row.category, manufacturer: row.manufacturer,
         modelNumber: row.modelNumber, totalQty: row.totalQty, minQty: row.minQty,
         purchaseDate: row.purchaseDate, cost: row.cost, notes: row.notes,
+        institutionId: row.institution?.id || row.institution?._id || row.institution,
       });
       load();
     } catch (err) { setError(err.response?.data?.message || 'Could not clone accessory.'); }
