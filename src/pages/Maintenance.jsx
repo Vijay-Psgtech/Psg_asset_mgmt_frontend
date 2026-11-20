@@ -97,7 +97,7 @@ export default function Maintenance() {
                 className={`px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest stencil ${
                   tab === t.key
                     ? 'border border-amber-500/50 bg-amber-500/10 text-amber-400'
-                    : 'text-muted hover:text-white'
+                    : 'text-muted hover:text-slate-900'
                 }`}
               >
                 {t.label}
@@ -108,7 +108,7 @@ export default function Maintenance() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by title, assignee, vendor…"
-            className="w-64 border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white placeholder:text-white/30 focus:border-amber-500/50 focus:outline-none"
+            className="w-64 border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white placeholder:text-slate-400 focus:border-amber-500/50 focus:outline-none"
           />
         </div>
 
@@ -121,7 +121,7 @@ export default function Maintenance() {
               className="mt-1 w-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-amber-500/50 focus:outline-none"
             >
               {TYPE_OPTIONS.map((option) => (
-                <option key={option} value={option} className="bg-slate-900 text-white">
+                <option key={option} value={option} className="text-slate-900 bg-white">
                   {option === 'all' ? 'All types' : option}
                 </option>
               ))}
@@ -136,7 +136,7 @@ export default function Maintenance() {
               className="mt-1 w-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-amber-500/50 focus:outline-none"
             >
               {PRIORITY_OPTIONS.map((option) => (
-                <option key={option} value={option} className="bg-slate-900 text-white">
+                <option key={option} value={option} className="text-slate-900 bg-white">
                   {option === 'all' ? 'All priorities' : option}
                 </option>
               ))}
@@ -152,7 +152,7 @@ export default function Maintenance() {
                 setPriorityFilter('all');
                 setSearch('');
               }}
-              className="w-full border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted hover:text-white"
+              className="w-64 border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted hover:text-slate-900 hover:border-slate-900"
             >
               Reset filters
             </button>
