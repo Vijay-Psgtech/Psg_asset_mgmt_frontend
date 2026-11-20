@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/client.js';
 import { EmptyState, ErrorBanner, Spinner } from '../components/Common.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const COMPONENT_STATUSES = ['all', 'available', 'assigned', 'in_maintenance', 'retired'];
 const KIT_ACTIVE_OPTIONS = ['all', 'active', 'inactive'];
@@ -42,8 +43,13 @@ const CONFIG = {
 
 export default function ResourcePage({ kind }) {
   const config = CONFIG[kind];
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(config.defaultForm());
+  const [institutions, setInstitutions] = useState([]);
+  const [institutionsLoading, setInstitutionsLoading] = useState(false);
+  const [institutionsError, setInstitutionsError] = useState('');
+  const [institutionId, setInstitutionId] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState('');
@@ -51,6 +57,24 @@ export default function ResourcePage({ kind }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (user?.role !== 'superadmin') return undefined;
+    let active = true;
+    setInstitutionsLoading(true);
+    setInstitutionsError('');
+    api.get('/institutions', { params: { status: 'active' } })
+      .then(({ data }) => {
+        if (active) setInstitutions((data.institutions || []).filter((institution) => institution.status === 'active'));
+      })
+      .catch((err) => {
+        if (active) setInstitutionsError(err.response?.data?.message || 'Could not load institutions.');
+      })
+      .finally(() => {
+        if (active) setInstitutionsLoading(false);
+      });
+    return () => { active = false; };
+  }, [user?.role]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,15 +103,21 @@ export default function ResourcePage({ kind }) {
   const resetForm = () => {
     setForm(config.defaultForm());
     setEditingId(null);
+    setInstitutionId('');
     setShowForm(false);
   };    
 
   const save = async (event) => {
     event.preventDefault();
+    if (!editingId && user?.role === 'superadmin' && !institutionId) {
+      setError('Select an institution before creating this record.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
       const payload = config.buildPayload(form);
+      if (!editingId && user?.role === 'superadmin') payload.institutionId = institutionId;
       if (editingId) await api.patch(`${config.endpoint}/${editingId}`, payload);
       else await api.post(config.endpoint, payload);
       resetForm();
@@ -169,6 +199,27 @@ export default function ResourcePage({ kind }) {
 
       {showForm && (
         <form onSubmit={save} className="card grid gap-4 p-5 sm:grid-cols-2">
+          {!editingId && user?.role === 'superadmin' && (
+            <label className="label">
+              Institution
+              <select
+                className="input mt-2"
+                value={institutionId}
+                onChange={(event) => setInstitutionId(event.target.value)}
+                required
+                disabled={institutionsLoading || !institutions.length}
+              >
+                <option value="">{institutionsLoading ? 'Loading institutions…' : 'Select an institution'}</option>
+                {institutions.map((institution) => (
+                  <option key={institution.id || institution._id} value={institution.id || institution._id}>
+                    {institution.name}{institution.code ? ` (${institution.code})` : ''}
+                  </option>
+                ))}
+              </select>
+              {institutionsError && <span className="mt-1 block text-xs text-red-600">{institutionsError}</span>}
+              {!institutionsLoading && !institutionsError && !institutions.length && <span className="mt-1 block text-xs text-red-600">No active institutions available.</span>}
+            </label>
+          )}
           {config.fields.map(([key, label, type, options]) => {
             if (type === 'textarea') {
               return (
@@ -206,7 +257,7 @@ export default function ResourcePage({ kind }) {
           })}
           <div className="flex justify-end sm:col-span-2 gap-2">
             <button type="button" className="btn-outline text-xs" onClick={resetForm}>Cancel</button>
-            <button className="btn-primary text-xs" disabled={saving}>{saving ? 'Saving...' : editingId ? 'Update record' : 'Save record'}</button>
+            <button className="btn-primary text-xs" disabled={saving || (!editingId && user?.role === 'superadmin' && (institutionsLoading || !institutionId))}>{saving ? 'Saving...' : editingId ? 'Update record' : 'Save record'}</button>
           </div>
         </form>
       )}
