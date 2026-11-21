@@ -38,7 +38,7 @@ const IMPORT_OPTIONS = {
       'name', 'licenseKey', 'vendor', 'category', 'seats', 'purchaseDate',
       'expirationDate', 'cost', 'notes',
     ],
-    note: 'seats must be a positive number. Dates should use YYYY-MM-DD.',
+    note: 'seats must be a positive number.',
   },
 };
 
@@ -165,7 +165,7 @@ export default function Import() {
             <br />
             Optional: {selectedType.fields.filter((field) => !selectedType.required.includes(field)).join(', ')}
           </p>
-          <p className="mt-2 text-xs leading-5 text-muted">{selectedType.note} Blank optional cells are ignored; unknown or duplicate headers are rejected.</p>
+          <p className="mt-2 text-xs leading-5 text-muted">{selectedType.note} Dates may use YYYY-MM-DD or DD-MM-YYYY. Blank optional cells are ignored; unknown or duplicate headers are rejected.</p>
         </div>
 
         <ErrorBanner message={error} />
