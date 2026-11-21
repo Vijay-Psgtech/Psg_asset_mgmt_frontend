@@ -146,7 +146,7 @@ export default function AppLayout() {
   const { user, institutions, switchInstitution, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [openGroups, setOpenGroups] = useState(() => Object.fromEntries(MENU.filter((item) => item.children).map((item) => [item.label, true])));
+  const [openGroups, setOpenGroups] = useState(() => Object.fromEntries(MENU.filter((item) => item.children).map((item) => [item.label, false])));
   const [institutionMenuOpen, setInstitutionMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
