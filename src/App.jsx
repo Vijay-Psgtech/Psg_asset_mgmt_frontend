@@ -29,6 +29,7 @@ const RequestableItems = lazy(() => import('./pages/RequestableItems.jsx'));
 const ResourcePage = lazy(() => import('./pages/ResourcePage.jsx'));
 const Import = lazy(() => import('./pages/Import.jsx'));
 const Calendar = lazy(() => import('./pages/Calendar.jsx'));
+const CustomFields = lazy(() => import('./pages/CustomFields.jsx'));
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -167,6 +168,7 @@ export default function App() {
         <Route path="kits" element={<MenuAccessRoute accessKey="kits"><ResourcePage kind="kits" /></MenuAccessRoute>} />
         <Route path="import" element={<MenuAccessRoute accessKey="import"><Import /></MenuAccessRoute>} />
         <Route path="calendar" element={<MenuAccessRoute accessKey="calendar"><Calendar /></MenuAccessRoute>} />
+        <Route path="custom-fields" element={<MenuAccessRoute accessKey="custom-fields"><CustomFields /></MenuAccessRoute>} />
       </Route>
       <Route path="*" element={<NotFound />} />
         </Routes>
