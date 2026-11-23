@@ -142,6 +142,19 @@ export default function AssetDetail() {
               <div><dt className="text-muted text-xs mb-0.5">Purchase Date</dt><dd className="text-zinc-100">{fmtDate(asset.purchaseDate)}</dd></div>
               <div><dt className="text-muted text-xs mb-0.5">Warranty Expiry</dt><dd className="text-zinc-100">{fmtDate(asset.warrantyExpiry)}</dd></div>
             </dl>
+            {asset.customFields?.length > 0 && (
+              <div className="mt-5 border-t border-line pt-4">
+                <div className="mb-3 text-[11px] font-mono uppercase tracking-wider text-muted">Additional details</div>
+                <dl className="grid grid-cols-1 gap-x-4 gap-y-4 text-sm sm:grid-cols-2">
+                  {asset.customFields.map((field) => (
+                    <div key={field.key}>
+                      <dt className="mb-0.5 text-xs text-muted">{field.label}</dt>
+                      <dd className="whitespace-pre-wrap text-zinc-100">{typeof field.value === 'boolean' ? (field.value ? 'Yes' : 'No') : field.value || '—'}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
             {asset.notes && (
               <div className="mt-4 pt-4 border-t border-line">
                 <div className="text-muted text-xs mb-1">Notes</div>

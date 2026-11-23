@@ -31,6 +31,10 @@ export default function AssetForm() {
   const [form, setForm] = useState(emptyForm);
   const [institutionId, setInstitutionId] = useState('');
   const [institutions, setInstitutions] = useState([]);
+  const [customFieldDefinitions, setCustomFieldDefinitions] = useState([]);
+  const [customFieldValues, setCustomFieldValues] = useState({});
+  const [customFieldsLoading, setCustomFieldsLoading] = useState(false);
+  const [customFieldsError, setCustomFieldsError] = useState(false);
   const [institutionsLoading, setInstitutionsLoading] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -73,12 +77,47 @@ export default function AssetForm() {
           location: a.location || '',
           notes: a.notes || '',
         });
+        setInstitutionId(a.institution?._id || a.institution || '');
+        setCustomFieldValues(Object.fromEntries((a.customFields || []).map((field) => [field.key, field.value])));
       })
       .catch((err) => setError(err.response?.data?.message || 'Failed to load asset'))
       .finally(() => setLoading(false));
   }, [id, isEdit]);
 
+  useEffect(() => {
+    let active = true;
+    setCustomFieldsLoading(true);
+    setCustomFieldsError(false);
+    client.get('/custom-fields', {
+      params: { category: form.category },
+    })
+      .then(({ data }) => {
+        if (!active) return;
+        const definitions = data.fields || [];
+        setCustomFieldDefinitions(definitions);
+        setCustomFieldsError(false);
+        setCustomFieldValues((current) => Object.fromEntries(definitions
+          .filter((field) => Object.prototype.hasOwnProperty.call(current, field.key))
+          .map((field) => [field.key, current[field.key]])));
+      })
+      .catch((err) => {
+        if (active) {
+          setCustomFieldDefinitions([]);
+          setCustomFieldsError(true);
+          setError(err.response?.data?.message || 'Failed to load custom fields');
+        }
+      })
+      .finally(() => { if (active) setCustomFieldsLoading(false); });
+    return () => { active = false; };
+  }, [form.category]);
+
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+  const updateCategory = (event) => {
+    setForm((current) => ({ ...current, category: event.target.value }));
+    setCustomFieldDefinitions([]);
+    setCustomFieldValues({});
+    setCustomFieldsLoading(true);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,6 +130,11 @@ export default function AssetForm() {
       purchaseCost: form.purchaseCost === '' ? undefined : Number(form.purchaseCost),
       purchaseDate: form.purchaseDate ? new Date(form.purchaseDate).toISOString() : undefined,
       warrantyExpiry: form.warrantyExpiry ? new Date(form.warrantyExpiry).toISOString() : undefined,
+      customFields: Object.fromEntries(customFieldDefinitions.map((field) => {
+        const value = customFieldValues[field.key];
+        if (value === '' || value === undefined || value === null) return [field.key, undefined];
+        return [field.key, field.type === 'number' ? Number(value) : value];
+      })),
     };
     // strip empty optional strings so zod optional() doesn't choke on ''
     Object.keys(payload).forEach((k) => {
@@ -153,7 +197,7 @@ export default function AssetForm() {
 
           <div>
             <label className="label">Category *</label>
-            <select className="input" value={form.category} onChange={update('category')} required>
+            <select className="input" value={form.category} onChange={updateCategory} required>
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -204,10 +248,43 @@ export default function AssetForm() {
             <label className="label">Notes</label>
             <textarea className="input" rows={3} value={form.notes} onChange={update('notes')} placeholder="Any additional details…" />
           </div>
+          {customFieldDefinitions.length > 0 && (
+            <div className="col-span-2 rounded-xl border border-line bg-panel-soft p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-ink">Additional {form.category} details</h2>
+                  <p className="mt-0.5 text-xs text-muted">Category-specific information configured for this institution.</p>
+                </div>
+                {customFieldsLoading && <span className="text-xs text-muted">Refreshing…</span>}
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {customFieldDefinitions.map((field) => (
+                  <div key={field._id} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
+                    <label className="label" htmlFor={`custom-${field.key}`}>{field.label}{field.required ? ' *' : ''}</label>
+                    {field.type === 'textarea' ? (
+                      <textarea id={`custom-${field.key}`} className="input" rows={3} required={field.required} maxLength={2000} value={customFieldValues[field.key] ?? ''} onChange={(event) => setCustomFieldValues((current) => ({ ...current, [field.key]: event.target.value }))} />
+                    ) : field.type === 'select' ? (
+                      <select id={`custom-${field.key}`} className="input" required={field.required} value={customFieldValues[field.key] ?? ''} onChange={(event) => setCustomFieldValues((current) => ({ ...current, [field.key]: event.target.value }))}>
+                        <option value="">Select an option</option>
+                        {field.options.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    ) : field.type === 'checkbox' ? (
+                      <label className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-white px-3 text-sm text-ink">
+                        <input id={`custom-${field.key}`} type="checkbox" required={field.required} checked={Boolean(customFieldValues[field.key])} onChange={(event) => setCustomFieldValues((current) => ({ ...current, [field.key]: event.target.checked }))} />
+                        {field.label}
+                      </label>
+                    ) : (
+                      <input id={`custom-${field.key}`} className="input" type={field.type} required={field.required} maxLength={field.type === 'text' ? 200 : undefined} value={customFieldValues[field.key] ?? ''} onChange={(event) => setCustomFieldValues((current) => ({ ...current, [field.key]: event.target.value }))} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="submit" className="btn-primary" disabled={saving || (!isEdit && user?.role === 'superadmin' && (institutionsLoading || !institutionId))}>
+          <button type="submit" className="btn-primary" disabled={saving || customFieldsLoading || customFieldsError || (!isEdit && user?.role === 'superadmin' && (institutionsLoading || !institutionId))}>
             {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Asset'}
           </button>
           <button type="button" className="btn-ghost" onClick={() => navigate(-1)}>
