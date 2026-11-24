@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext.jsx';
 import StatusChip from '../components/StatusChip.jsx';
 import { Spinner, ErrorBanner, EmptyState } from '../components/Common.jsx';
 
-const CATEGORIES = ['Laptop', 'Desktop', 'Monitor', 'Phone', 'Tablet', 'Server', 'Networking', 'Peripheral', 'Software License', 'Other'];
 const STATUSES = ['available', 'assigned', 'in_maintenance', 'retired', 'lost', 'byod', 'deleted'];
 
 export default function Assets() {
@@ -18,6 +17,7 @@ export default function Assets() {
   const [status, setStatus] = useState(() => searchParams.get('status') || '');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState([]);
 
   const fetchAssets = useCallback(
     (page = 1) => {
@@ -63,6 +63,12 @@ export default function Assets() {
   }, [searchParams]);
 
   useEffect(() => {
+    client.get('/categories')
+      .then(({ data }) => setCategories((data.categories || []).filter((item) => item.active)))
+      .catch(() => setCategories([]));
+  }, []);
+
+  useEffect(() => {
     const t = setTimeout(() => fetchAssets(1), 300);
     return () => clearTimeout(t);
   }, [fetchAssets]);
@@ -86,8 +92,8 @@ export default function Assets() {
         />
         <select className="input max-w-[180px]" value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="">All Categories</option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
+          {categories.map((item) => (
+            <option key={item._id} value={item.name}>{item.name}</option>
           ))}
         </select>
         <select className="input max-w-[180px]" value={status} onChange={(e) => setStatus(e.target.value)}>
