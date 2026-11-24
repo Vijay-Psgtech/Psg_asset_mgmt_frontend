@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../api/client.js';
 import { ErrorBanner } from '../components/Common.jsx';
 
-const CATEGORIES = ['Laptop', 'Desktop', 'Monitor', 'Phone', 'Tablet', 'Server', 'Networking', 'Peripheral', 'Software License', 'Other'];
 const FIELD_TYPES = [
   ['text', 'Short text'],
   ['textarea', 'Long text'],
@@ -22,13 +21,17 @@ export default function CustomFields() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
-    api.get('/custom-fields')
-      .then(({ data }) => {
-        if (active) setFields(data.fields || []);
+    Promise.all([api.get('/custom-fields'), api.get('/categories')])
+      .then(([fieldsResponse, categoriesResponse]) => {
+        if (active) {
+          setFields(fieldsResponse.data.fields || []);
+          setCategories((categoriesResponse.data.categories || []).filter((category) => category.active));
+        }
       })
       .catch((err) => {
         if (active) setError(err.response?.data?.message || 'Failed to load custom fields.');
@@ -37,9 +40,9 @@ export default function CustomFields() {
     return () => { active = false; };
   }, []);
 
-  const groupedFields = useMemo(() => CATEGORIES.map((category) => ({
-    category,
-    fields: fields.filter((field) => field.categories.includes(category)),
+  const groupedFields = useMemo(() => categories.map((category) => ({
+    category: category.name,
+    fields: fields.filter((field) => field.categories.includes(category.name)),
   })).filter((group) => group.fields.length), [fields]);
 
   const resetForm = () => {
@@ -199,10 +202,10 @@ export default function CustomFields() {
           <fieldset>
             <legend className="label">Show for categories *</legend>
             <div className="grid grid-cols-2 gap-2">
-              {CATEGORIES.map((category) => (
-                <label key={category} className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-xs text-ink">
-                  <input type="checkbox" checked={form.categories.includes(category)} onChange={() => toggleCategory(category)} />
-                  {category}
+              {categories.map((category) => (
+                <label key={category._id} className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-xs text-ink">
+                  <input type="checkbox" checked={form.categories.includes(category.name)} onChange={() => toggleCategory(category.name)} />
+                  {category.name}
                 </label>
               ))}
             </div>

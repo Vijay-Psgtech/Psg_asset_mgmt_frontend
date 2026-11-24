@@ -4,8 +4,6 @@ import client from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBanner, Spinner } from '../components/Common.jsx';
 
-const CATEGORIES = ['Laptop', 'Desktop', 'Monitor', 'Phone', 'Tablet', 'Server', 'Networking', 'Peripheral', 'Software License', 'Other'];
-
 const emptyForm = {
   name: '',
   category: 'Laptop',
@@ -36,6 +34,8 @@ export default function AssetForm() {
   const [customFieldsLoading, setCustomFieldsLoading] = useState(false);
   const [customFieldsError, setCustomFieldsError] = useState(false);
   const [institutionsLoading, setInstitutionsLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -83,6 +83,26 @@ export default function AssetForm() {
       .catch((err) => setError(err.response?.data?.message || 'Failed to load asset'))
       .finally(() => setLoading(false));
   }, [id, isEdit]);
+
+  useEffect(() => {
+    let active = true;
+    client.get('/categories', { params: { includeInactive: 'true' } })
+      .then(({ data }) => {
+        if (!active) return;
+        const allCategories = data.categories || [];
+        setCategories(allCategories);
+        const available = allCategories.filter((category) => category.active);
+        setForm((current) => ({
+          ...current,
+          category: allCategories.some((category) => category.name === current.category)
+            ? current.category
+            : available[0]?.name || '',
+        }));
+      })
+      .catch((err) => setError(err.response?.data?.message || 'Failed to load categories'))
+      .finally(() => { if (active) setCategoriesLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -198,8 +218,8 @@ export default function AssetForm() {
           <div>
             <label className="label">Category *</label>
             <select className="input" value={form.category} onChange={updateCategory} required>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
+              {categories.filter((category) => category.active || category.name === form.category).map((category) => (
+                <option key={category._id} value={category.name}>{category.name}</option>
               ))}
             </select>
           </div>
@@ -284,7 +304,7 @@ export default function AssetForm() {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="submit" className="btn-primary" disabled={saving || customFieldsLoading || customFieldsError || (!isEdit && user?.role === 'superadmin' && (institutionsLoading || !institutionId))}>
+          <button type="submit" className="btn-primary" disabled={saving || categoriesLoading || customFieldsLoading || customFieldsError || !form.category || (!isEdit && user?.role === 'superadmin' && (institutionsLoading || !institutionId))}>
             {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Asset'}
           </button>
           <button type="button" className="btn-ghost" onClick={() => navigate(-1)}>
