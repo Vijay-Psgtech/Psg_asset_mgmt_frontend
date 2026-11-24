@@ -65,7 +65,7 @@ const MENU = [
     icon: '⚙',
     children: [
       { key: 'institutions', label: 'Institutions', to: '/institutions' },
-      // { key: 'categories', label: 'Categories', to: '/categories' },
+      { key: 'categories', label: 'Categories', to: '/categories' },
       { key: 'custom-fields', label: 'Custom Fields', to: '/custom-fields' },
       // { key: 'status-labels', label: 'Status Labels', to: '/status-labels' },
     ],
@@ -78,7 +78,7 @@ const MENU = [
 
 export const DEFAULT_ROLE_ACCESS = {
   superadmin: MENU.flatMap((item) => item.children ? [item.key, ...item.children.map((child) => child.key)] : [item.key]),
-  admin: ['dashboard', 'calendar', 'requirements', 'assets', 'all-assets', 'deployed-assets', 'ready-assets', 'pending-assets', 'undeployable-assets', 'byod-assets', 'archived-assets', 'requestable-assets', 'audit-due', 'checkin-due', 'add-asset', 'scan-asset', 'quick-scan-checkin', 'bulk-checkout', 'requested-assets', 'deleted-assets', 'scanner-audit', 'assignments', 'maintenance', 'inventory', 'accessories', 'consumables', 'licenses', 'documents', 'components', 'kits', 'reports', 'people', 'all-users', 'institutions', 'custom-fields', 'my-profile', 'audit-log', 'import', 'my-assets', 'requestable-items'],
+  admin: ['dashboard', 'calendar', 'requirements', 'assets', 'all-assets', 'deployed-assets', 'ready-assets', 'pending-assets', 'undeployable-assets', 'byod-assets', 'archived-assets', 'requestable-assets', 'audit-due', 'checkin-due', 'add-asset', 'scan-asset', 'quick-scan-checkin', 'bulk-checkout', 'requested-assets', 'deleted-assets', 'scanner-audit', 'assignments', 'maintenance', 'inventory', 'accessories', 'consumables', 'licenses', 'documents', 'components', 'kits', 'reports', 'people', 'all-users', 'institutions', 'categories', 'custom-fields', 'my-profile', 'audit-log', 'import', 'my-assets', 'requestable-items'],
   asset_user: ['dashboard', 'calendar', 'my-assets', 'requestable-items', 'documents', 'profile'],
 };
 
