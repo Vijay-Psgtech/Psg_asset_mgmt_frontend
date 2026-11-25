@@ -255,7 +255,7 @@ export default function AssetForm() {
           </div>
 
           <div>
-            <label className="label">Purchase Cost (USD)</label>
+            <label className="label">Purchase Cost (INR)</label>
             <input className="input" type="number" min="0" step="0.01" value={form.purchaseCost} onChange={update('purchaseCost')} placeholder="1999.00" />
           </div>
 
