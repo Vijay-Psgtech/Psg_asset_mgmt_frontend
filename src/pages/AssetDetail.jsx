@@ -5,7 +5,7 @@ import StatusChip from '../components/StatusChip.jsx';
 import { Spinner, ErrorBanner } from '../components/Common.jsx';
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—');
-const currency = (n) => (n || n === 0 ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n) : '—');
+const currency = (n) => (n || n === 0 ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'INR' }).format(n) : '—');
 
 function AssignModal({ assetId, onClose, onDone }) {
   const [form, setForm] = useState({ name: '', email: '', department: '', conditionOnAssign: '' });
