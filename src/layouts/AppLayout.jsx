@@ -149,6 +149,7 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const [openGroups, setOpenGroups] = useState(() => Object.fromEntries(MENU.filter((item) => item.children).map((item) => [item.label, false])));
   const [institutionMenuOpen, setInstitutionMenuOpen] = useState(false);
+  const [institutionSwitchError, setInstitutionSwitchError] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -160,6 +161,10 @@ export default function AppLayout() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('assetrak_theme') === 'midnight');
   const menu = getVisibleMenu(user);
+  const selectedInstitutionId = user?.institution?._id || user?.institution?.id || user?.institution || null;
+  const selectedInstitution = institutions.find((institution) => (
+    String(institution.id || institution._id) === String(selectedInstitutionId)
+  )) || (typeof user?.institution === 'object' ? user.institution : null);
   const currentLabel = useMemo(() => {
     const entries = menu.flatMap((item) => item.children ? item.children : [item]);
     const match = entries.find((item) => item.to === location.pathname) || entries.filter((item) => item.to && item.to !== '/').find((item) => location.pathname.startsWith(`${item.to}/`));
@@ -258,6 +263,21 @@ export default function AppLayout() {
     setNotifications((items) => items.map((item) => ({ ...item, readAt: item.readAt || new Date().toISOString() })));
     await api.patch('/notifications/read-all').catch(() => {});
   };
+  const selectInstitution = async (institutionId) => {
+    setInstitutionSwitchError('');
+    const currentId = selectedInstitutionId ? String(selectedInstitutionId) : null;
+    const nextId = institutionId ? String(institutionId) : null;
+    if (currentId === nextId) {
+      setInstitutionMenuOpen(false);
+      return;
+    }
+    try {
+      await switchInstitution(institutionId);
+      window.location.reload();
+    } catch (error) {
+      setInstitutionSwitchError(error.response?.data?.message || 'Could not switch institutions.');
+    }
+  };
 
   return <div className={`app-shell flex min-h-screen ${darkMode ? 'theme-midnight' : ''}`}>
     {mobileNavOpen && <button type="button" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} className="fixed inset-0 z-20 bg-slate-950/50 lg:hidden" />}
@@ -272,28 +292,34 @@ export default function AppLayout() {
       <header className="app-header sticky top-0 z-20 flex min-h-16 flex-wrap items-center gap-2 border-b border-line bg-[#fff] px-3 py-2 text-ink shadow-sm sm:gap-3 sm:px-5">
         <button type="button" onClick={() => setMobileNavOpen((value) => !value)} className="rounded border border-line px-3 py-2 text-xs text-muted lg:hidden" aria-label="Toggle navigation">Menu</button>
         <div className="mr-auto min-w-0"><div className="truncate text-[10px] font-mono uppercase tracking-[0.18em] text-muted">Workspace</div><div className="truncate text-base font-semibold text-[#1d2a38]">{currentLabel}</div></div>
-        {(institutions?.length || user?.institution) && (
+        {(user?.role === 'superadmin' || institutions?.length || user?.institution) && (
           <div className="relative">
             <button type="button" onClick={() => setInstitutionMenuOpen((value) => !value)} className="rounded border border-[#dfe7f1] bg-[#f5f7fa] px-3 py-2 text-xs font-medium text-[#49607a]">
-              {user?.role === 'superadmin' ? 'All institutions' : user?.institution?.name || user?.institution?.code || 'Institution'}
+              {user?.role === 'superadmin'
+                ? selectedInstitution?.name || selectedInstitution?.code || 'All institutions'
+                : user?.institution?.name || user?.institution?.code || 'Institution'}
             </button>
             {institutionMenuOpen && (
               <div className="absolute right-0 top-11 z-50 w-56 rounded-md border border-line bg-panel text-ink shadow-xl">
-                {user?.role === 'superadmin' && <div className="border-b border-line px-3 py-2 text-[10px] uppercase tracking-wide text-muted">Default institution for new records</div>}
+                {user?.role === 'superadmin' && <div className="border-b border-line px-3 py-2 text-[10px] uppercase tracking-wide text-muted">Institution data view</div>}
+                {institutionSwitchError && <p role="alert" className="border-b border-line px-3 py-2 text-xs text-red-600">{institutionSwitchError}</p>}
+                {user?.role === 'superadmin' && (
+                  <button
+                    type="button"
+                    onClick={() => selectInstitution(null)}
+                    className={`block w-full px-3 py-2 text-left text-xs hover:bg-[#f1f5f9] ${!selectedInstitutionId ? 'font-semibold text-accent' : ''}`}
+                  >
+                    All institutions{!selectedInstitutionId ? ' ✓' : ''}
+                  </button>
+                )}
                 {institutions.length ? institutions.map((institution) => (
                   <button
                     key={institution.id || institution._id}
                     type="button"
-                    onClick={async () => {
-                      setInstitutionMenuOpen(false);
-                      if ((user?.institution?._id || user?.institution?.id) !== (institution.id || institution._id)) {
-                        await switchInstitution(institution.id || institution._id);
-                        window.location.reload();
-                      }
-                    }}
-                    className="block w-full px-3 py-2 text-left text-xs hover:bg-[#f1f5f9]"
+                    onClick={() => selectInstitution(institution.id || institution._id)}
+                    className={`block w-full px-3 py-2 text-left text-xs hover:bg-[#f1f5f9] ${String(selectedInstitutionId) === String(institution.id || institution._id) ? 'font-semibold text-accent' : ''}`}
                   >
-                    {institution.name || institution.code}
+                    {institution.name || institution.code}{String(selectedInstitutionId) === String(institution.id || institution._id) ? ' ✓' : ''}
                   </button>
                 )) : <div className="px-3 py-2 text-xs text-muted">No institutions</div>}
               </div>
